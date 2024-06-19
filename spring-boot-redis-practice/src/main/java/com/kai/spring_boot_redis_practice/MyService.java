@@ -136,10 +136,14 @@ public class MyService {
     }
 
 
+    public Map<Object, Object> getHash(String key) {
+        return stringRedisTemplate.opsForHash().entries(key);
+    }
 
-
-
-
-
-
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        stringRedisTemplate.opsForHash().put(key, "name", name);
+        stringRedisTemplate.opsForHash().put(key, "description", description);
+        stringRedisTemplate.opsForHash().put(key, "likes", likes.toString());
+        stringRedisTemplate.opsForHash().put(key, "visitors", visitors.toString());
+    }
 }
