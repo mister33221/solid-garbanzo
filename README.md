@@ -53,7 +53,13 @@ Redis官方提供了一個Redis的Docker映像，可以通過Docker Hub下載。
 docker run --name my-redis -d -p 6379:6379 --name <your-redis-container-name> redis
 ```
 
-或是可以使用 docker-compose.yml 檔案來啟動 Redis 服務：
+- 因為我不想使用 Redis 原生的 CLI，而且 Redis 後來來有推出一個可以用來檢視 Redis 的 GUI 工具，叫做 RedisInsight，可以參考[RedisInsight](https://redis.io/docs/latest/operate/redisinsight/install/)。可以使用 Docker 安裝，非常方便。我們直接使用 Docker 安裝 RedisInsight：
+
+```bash
+docker run -d --name redisinsight -p 5540:5540 --name <your-redisinsight-container-name> redis/redisinsight:latest
+```
+
+- 我把以上的 redis 和 redisinsight 用 docker compose 包起來，這樣我直接在專案目錄底下使用 `docker-compose up -d` 就可以一次啟動兩個容器了。
 
 ```yaml
 version: '3.8'
@@ -64,12 +70,14 @@ services:
     container_name: my-redis
     ports:
       - "6379:6379"
-```
 
-- 因為我不想使用 Redis 原生的 CLI，而且 Redis 後來來有推出一個可以用來檢視 Redis 的 GUI 工具，叫做 RedisInsight，可以參考[RedisInsight](https://redis.io/docs/latest/operate/redisinsight/install/)。可以使用 Docker 安裝，非常方便。我們直接使用 Docker 安裝 RedisInsight：
-
-```bash
-docker run -d --name redisinsight -p 5540:5540 --name <your-redisinsight-container-name> redis/redisinsight:latest
+  redisinsight :
+    image: redis/redisinsight:latest
+    container_name: my-redisinsight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
 ```
 
 - 然後我們可以透過瀏覽器，輸入 `http://localhost:5540` 來進入 RedisInsight 的介面，使用上都非常直覺，我就不介紹囉。
@@ -158,17 +166,300 @@ src
 9. 到瀏覽器輸入 `localhost:5540` 進入前面開好的 RedisInsight，方便我們觀察 Redis 的資料。
 10. 再到瀏覽器輸入 `localhost:8080/swagger-ui.html` 進入 Swagger 的介面，方便我們測試 API。
 
-接下來我們就來實作一些 Redis 的基本操作吧~
+這樣所有基礎需求都寫完了，接下來我們就來實作一些 Redis 的基本操作吧~
 
-> 為了方便，以下我們就都用 `get` Method 來操作 Redis，當然你也可以用 `post` Method 來操作。
+> 為了方便，以下我們就都用 `get` Method 來操作 Redis。
 
 ## Spring Data Redis 的基本操作
 
-### 字串（Strings）
+### CRUD（用 Strings 舉例）
 
-1. 新增一個字串到 Redis 中。
+- 新增一個字串到 Redis 中。
+    - Controller
+    ```java
+    @Operation(summary = "Save", description = "Save a key-value pair")
+    @Tag(name = "Key-Value")
+    @GetMapping("/save")
+    public void save(@Parameter(description = "The key") String key, @Parameter(description = "The value") String value) {
+        service.save(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void save(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
+    ```
+- 從 Redis 中取得一個字串。
+    - Controller
+    ```java
+    @Operation(summary = "Get", description = "Gets a value by key")
+    @Tag(name = "Key-Value")
+    @GetMapping("/get")
+    public String get(@Parameter(description = "The key") String key) {
+        return service.get(key);
+    }
+    ```
+    - Service
+    ```java
+    public String get(String key) {
+        return stringRedisTemplate.opsForValue().get(key);
+    }
+    ```
+- 更新 Redis 中的一個字串。其實就是新增一個字串，只是 key 已經存在。所以跟新增一個字串的方法一樣。
+    - Controller
+    ```java
+    @Operation(summary = "Update", description = "Update a key-value pair")
+    @Tag(name = "Key-Value")
+    @GetMapping("/update")
+    public void update(@Parameter(description = "The key") String key, @Parameter(description = "The value") String value) {
+        service.update(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void update(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
+    ```
+- 刪除 Redis 中的一個字串。
+    - Controller
+    ```java
+    @Operation(summary = "Delete", description = "Deletes a key-value pair")
+    @Tag(name = "Key-Value")
+    @GetMapping("/delete")
+    public void delete(String key) {
+        service.delete(key);
+    }
+    ```
+    - Service
+    ```java
+    public void delete(String key) {
+        stringRedisTemplate.delete(key);
+    }
+    ```
+- 是否存在 Redis 中的一個字串。
+    - Controller
+    ```java
+    @Operation(summary = "Exists", description = "Checks if a key exists")
+    @Tag(name = "Key-Value")
+    @GetMapping("/exists")
+    public boolean exists(String key) {
+        return service.exists(key);
+    }
+    ```
+    - Service
+    ```java
+    public boolean exists(String key) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
+    }
+    ```
+- 儲存時，設定TTL（Time To Live），也就是 expire time。
+    - Controller
+    ```java
+    @Operation(summary = "Get Expire", description = "Gets the expiration time of a key")
+    @Tag(name = "Key-Value")
+    @GetMapping("/getExpire")
+    public long getExpire(String key) {
+        return service.getExpire(key);
+    }
+    ```
+    - Service
+    ```java
+    public void saveWithExpire(String key, String value, long seconds) {
+        stringRedisTemplate.opsForValue().set(key, value, seconds, TimeUnit.SECONDS);
+    }
+    ```
+- 取得 TTL（Time To Live）。
+    - Controller
+    ```java
+   @Operation(summary = "Get Expire", description = "Gets the expiration time of a key")
+    @Tag(name = "Key-Value")
+    @GetMapping("/getExpire")
+    public long getExpire(String key) {
+        return service.getExpire(key);
+    }
+    ```
+    - Service
+    ```java
+    public long getExpire(String key) {
+        Optional<Long> duration = Optional.ofNullable(stringRedisTemplate.getExpire(key)); // 因為 getExpire() 回傳時，可能已經過期了，所以用 Optional 來處理。
+        return duration.orElse(0L); // 如果 duration 是 null(已經過期所以拿不到)，則回傳 0。
+    }
+    ```
+- 如果找不到 key，則新增一個字串到 Redis 中。如果找的到 key，則不做任何事。
+    - Controller
+    ```java
+    @Operation(summary = "Save If Absent", description = "Save a key-value pair if the key does not exist")
+    @Tag(name = "Key-Value")
+    @GetMapping("/saveIfAbsent")
+    public void saveIfAbsent(String key, String value) {
+        service.saveIfAbsent(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void saveIfAbsent(String key, String value) {
+        stringRedisTemplate.opsForValue().setIfAbsent(key, value);
+    }
+    ```
+- 計數器-增加(Increment)。
+    - Controller
+    ```java
+    @Operation(summary = "Increment", description = "Increments a key by a delta")
+    @Tag(name = "Counter")
+    @GetMapping("/increment")
+    public void increment(String key, long delta) {
+        service.increment(key, delta);
+    }
+    ```
+    - Service
+    ```java
+    public void increment(String key, long delta) {
+        stringRedisTemplate.opsForValue().increment(key, delta);
+    }
+    ```
+- 計數器-減少(Decrement)。
+    - Controller
+    ```java
+    @Operation(summary = "Decrement", description = "Decrements a key by a delta")
+    @Tag(name = "Counter")
+    @GetMapping("/decrement")
+    public void decrement(String key, long delta) {
+        service.decrement(key, delta);
+    }
+    ```
+    - Service
+    ```java
+    public void decrement(String key, long delta) {
+        stringRedisTemplate.opsForValue().decrement(key, delta);
+    }
+    ```
+- 把新的字串加到舊的字串後面，假設我原本的字串是 `Hello`，我想要加上 `World`，則結果就是 `HelloWorld`。
+    - Controller
+    ```java
+    @Operation(summary = "Append", description = "Appends a value to a key")
+    @Tag(name = "String")
+    @GetMapping("/append")
+    public long append(String key, String value) {
+        return service.append(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public long append(String key, String value) {
+        return stringRedisTemplate.opsForValue().append(key, value); // 可以由回傳值來得知新字串的長度。
+    }
+    ```
+- 使用 Range 取得字串的子字串。例如，我有一個字串， key 是 `hw`，value 是 `HelloWorld`，我想要取得 `World`，則可以使用 `range("hw", 5, 10)`。
+    - Controller
+    ```java
+    @Operation(summary = "Get Range", description = "Gets a range of values from a key")
+    @Tag(name = "Other")
+    @GetMapping("/getRange")
+    public String getRange(String key, long start, long end) {
+        return service.getRange(key, start, end);
+    }
+    ```
+    - Service
+    ```java
+    public String getRange(String key, long start, long end) {
+        return stringRedisTemplate.opsForValue().get(key, start, end);
+    }
+    ```
+- 使用 Range 去取代字串中的子字串。例如，我有一個字串， key 是 `hw`，value 是 `HelloWorld`，我使用了`setRange("hw", 0, "Hi")`。則結果就是 `HilloWorld`。
+    - Controller
+    ```java
+    @Operation(summary = "Set Range", description = "Sets a range of values to a key")
+    @Tag(name = "Other")
+    @GetMapping("/setRange")
+    public void setRange(String key, String value, long offset) {
+        service.setRange(key, value, offset);
+    }
+    ```
+    - Service
+    ```java
+    public void setRange(String key, String value, long offset) {
+        stringRedisTemplate.opsForValue().set(key, value, offset);
+    }
+    ```
+- 如果我想要一次取得多個 key 的 value
+    - Controller
+    ```java
+    @Operation(summary = "Multi Get", description = "Gets multiple values by key")
+    @Tag(name = "Key-Value")
+    @GetMapping("/multiGet")
+    public List<String> multiGet(String key1, String key2) {
+        return service.multiGet(key1, key2);
+    }
+
+    ```
+    - Service
+    ```java
+    public List<String> multiGet(String key1, String key2) {
+        List<String> keys = new ArrayList<>();
+        keys.add(key1);
+        keys.add(key2);
+        return stringRedisTemplate.opsForValue().multiGet(keys);
+    }
+    ```
+- 在物件導向的 Java 中，我們通常會使用物件來儲存資料，但 Redis 是一個 key-value 的資料庫，所以我們可以使用 `Hash` 來儲存物件。
+    - Controller
+    ```java
+    @Operation(summary = "Save Hash", description = "Save a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/saveHash")
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        service.saveHash(key, name, description, likes, visitors);
+    }
+    ```
+    - Service
+    ```java
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        Map<String, String> map = new HashMap<>();
+        map.put("name", name);
+        map.put("description", description);
+        map.put("likes", likes.toString());
+        map.put("visitors", visitors.toString());
+        stringRedisTemplate.opsForHash().putAll(key, map);
+    }
+    ```
+- 取得 Hash 中的所有欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Get hash", description = "Gets a hash by key")
+    @Tag(name = "Hash")
+    @GetMapping("/getHash")
+    public Map<Object, Object> getHash(String key) {
+        return service.getHash(key);
+    }
+    ```
+    - Service
+    ```java
+    public Map<Object, Object> getHash(String key) {
+        return stringRedisTemplate.opsForHash().entries(key);
+    }
+    ```
+- 取得 Hash 中的某個欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Get a field value from a hash", description = "Gets a field value from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/getHashFieldValue")
+    public String getHashFieldValue(String key, String field) {
+        return service.getHashValue(key, field);
+    }
+    ```
+    - Service
+    ```java
+    public String getHashValue(String key, String field) {
+        return (String) stringRedisTemplate.opsForHash().get(key, field);
+    }
+    ```
 
 ### 列表（Lists）
+
+
 
 ### 集合（Sets）
 

@@ -5,9 +5,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class MyService {
@@ -38,58 +37,17 @@ public class MyService {
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
     }
 
-    public void flush() {
-//        flushDb() is deprecated
-//        flushAll() is deprecated
-//        TODO: find a way to flush keys
-    }
-
-    public long dbSize() {
-        return stringRedisTemplate.getConnectionFactory().getConnection().dbSize();
-    }
-
     public void saveWithExpire(String key, String value, long seconds) {
-        stringRedisTemplate.opsForValue().set(key, value, seconds);
+        stringRedisTemplate.opsForValue().set(key, value, seconds, TimeUnit.SECONDS);
     }
 
     public long getExpire(String key) {
-        return stringRedisTemplate.getExpire(key);
-    }
-
-    public void saveWithExpireAt(String key, String value, long unixTime) {
-        stringRedisTemplate.opsForValue().set(key, value, unixTime);
-    }
-
-    public long getExpireAt(String key) {
-        return stringRedisTemplate.getExpire(key);
+        Optional<Long> duration = Optional.ofNullable(stringRedisTemplate.getExpire(key)); // 因為 getExpire() 回傳時，可能已經過期了，所以用 Optional 來處理。
+        return duration.orElse(0L); // 如果 duration 是 null(已經過期所以拿不到)，則回傳 0。
     }
 
     public void saveIfAbsent(String key, String value) {
         stringRedisTemplate.opsForValue().setIfAbsent(key, value);
-    }
-
-    public void saveIfAbsentWithExpire(String key, String value, long seconds) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, value, Duration.ofDays(seconds));
-    }
-
-    public void saveIfAbsentWithExpireAt(String key, String value, long unixTime) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, value, Duration.ofDays(unixTime));
-    }
-
-    public void saveWithExpireAndSet(String key, String value, long seconds) {
-        stringRedisTemplate.opsForValue().set(key, value, seconds);
-    }
-
-    public void saveWithExpireAtAndSet(String key, String value, long unixTime) {
-        stringRedisTemplate.opsForValue().set(key, value, unixTime);
-    }
-
-    public void saveWithExpireAndSetIfAbsent(String key, String value, long seconds) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, value, Duration.ofDays(seconds));
-    }
-
-    public void saveWithExpireAtAndSetIfAbsent(String key, String value, long unixTime) {
-        stringRedisTemplate.opsForValue().setIfAbsent(key, value, Duration.ofDays(unixTime));
     }
 
     public void increment(String key, long delta) {
@@ -112,14 +70,6 @@ public class MyService {
         stringRedisTemplate.opsForValue().set(key, value, offset);
     }
 
-    public void setBit(String key, long offset, boolean value) {
-        stringRedisTemplate.opsForValue().setBit(key, offset, value);
-    }
-
-    public boolean getBit(String key, long offset) {
-        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().getBit(key, offset));
-    }
-
     public void multiSet(String key1, String value1, String key2, String value2) {
         stringRedisTemplate.opsForValue().multiSet(Map.of(key1, value1, key2, value2));
     }
@@ -131,19 +81,21 @@ public class MyService {
         return stringRedisTemplate.opsForValue().multiGet(keys);
     }
 
-    public void multiSetIfAbsent(String key1, String value1, String key2, String value2) {
-        stringRedisTemplate.opsForValue().multiSetIfAbsent(Map.of(key1, value1, key2, value2));
-    }
-
-
     public Map<Object, Object> getHash(String key) {
         return stringRedisTemplate.opsForHash().entries(key);
     }
 
     public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
-        stringRedisTemplate.opsForHash().put(key, "name", name);
-        stringRedisTemplate.opsForHash().put(key, "description", description);
-        stringRedisTemplate.opsForHash().put(key, "likes", likes.toString());
-        stringRedisTemplate.opsForHash().put(key, "visitors", visitors.toString());
+        Map<String, String> map = new HashMap<>();
+        map.put("name", name);
+        map.put("description", description);
+        map.put("likes", likes.toString());
+        map.put("visitors", visitors.toString());
+        stringRedisTemplate.opsForHash().putAll(key, map);
+    }
+
+
+    public String getHashValue(String key, String field) {
+        return (String) stringRedisTemplate.opsForHash().get(key, field);
     }
 }

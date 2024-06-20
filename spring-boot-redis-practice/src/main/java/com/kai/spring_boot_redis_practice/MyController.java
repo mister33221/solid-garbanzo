@@ -60,20 +60,6 @@ public class MyController {
         return service.exists(key);
     }
 
-    @Operation(summary = "Flush", description = "Flushes all keys")
-    @Tag(name = "Other")
-    @GetMapping("/flush")
-    public void flush() {
-        service.flush();
-    }
-
-    @Operation(summary = "DB Size", description = "Returns the size of the database")
-    @Tag(name = "Other")
-    @GetMapping("/dbSize")
-    public long dbSize() {
-        return service.dbSize();
-    }
-
     @Operation(summary = "Save with Expire", description = "Save a key-value pair with an expiration time")
     @Tag(name = "Key-Value")
     @GetMapping("/saveWithExpire")
@@ -88,67 +74,11 @@ public class MyController {
         return service.getExpire(key);
     }
 
-    @Operation(summary = "Save with Expire At", description = "Save a key-value pair with an expiration time")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveWithExpireAt")
-    public void saveWithExpireAt(String key, String value, long unixTime) {
-        service.saveWithExpireAt(key, value, unixTime);
-    }
-
-    @Operation(summary = "Get Expire At", description = "Gets the expiration time of a key")
-    @Tag(name = "Key-Value")
-    @GetMapping("/getExpireAt")
-    public long getExpireAt(String key) {
-        return service.getExpireAt(key);
-    }
-
     @Operation(summary = "Save If Absent", description = "Save a key-value pair if the key does not exist")
     @Tag(name = "Key-Value")
     @GetMapping("/saveIfAbsent")
     public void saveIfAbsent(String key, String value) {
         service.saveIfAbsent(key, value);
-    }
-
-    @Operation(summary = "Save If Absent with Expire", description = "Save a key-value pair with an expiration time if the key does not exist")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveIfAbsentWithExpire")
-    public void saveIfAbsentWithExpire(String key, String value, long seconds) {
-        service.saveIfAbsentWithExpire(key, value, seconds);
-    }
-
-    @Operation(summary = "Save If Absent with Expire At", description = "Save a key-value pair with an expiration time if the key does not exist")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveIfAbsentWithExpireAt")
-    public void saveIfAbsentWithExpireAt(String key, String value, long unixTime) {
-        service.saveIfAbsentWithExpireAt(key, value, unixTime);
-    }
-
-    @Operation(summary = "Save with Expire and Set", description = "Save a key-value pair with an expiration time and SET_IF_ABSENT")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveWithExpireAndSet")
-    public void saveWithExpireAndSet(String key, String value, long seconds) {
-        service.saveWithExpireAndSet(key, value, seconds);
-    }
-
-    @Operation(summary = "Save with Expire at and Set", description = "Save a key value pair with an expiration time and SET_IF_ABSENT")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveWithExpireAtAndSet")
-    public void saveWithExpireAtAndSet(String key, String value, long unixTime) {
-        service.saveWithExpireAtAndSet(key, value, unixTime);
-    }
-
-    @Operation(summary = "Save with Expire and Set If Absent", description = "Save a key-value pair with an expiration time and SET_IF_ABSENT")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveWithExpireAndSetIfAbsent")
-    public void saveWithExpireAndSetIfAbsent(String key, String value, long seconds) {
-        service.saveWithExpireAndSetIfAbsent(key, value, seconds);
-    }
-
-    @Operation(summary = "Save with Expire At and Set If Absent", description = "Save a key-value pair with an expiration time and SET_IF_ABSENT")
-    @Tag(name = "Key-Value")
-    @GetMapping("/saveWithExpireAtAndSetIfAbsent")
-    public void saveWithExpireAtAndSetIfAbsent(String key, String value, long unixTime) {
-        service.saveWithExpireAtAndSetIfAbsent(key, value, unixTime);
     }
 
     @Operation(summary = "Increment", description = "Increments a key by a delta")
@@ -186,20 +116,6 @@ public class MyController {
         service.setRange(key, value, offset);
     }
 
-    @Operation(summary = " Get Bit", description = "Gets a bit from a key")
-    @Tag(name = "Bit")
-    @GetMapping("/getBit")
-    public boolean getBit(String key, long offset) {
-        return service.getBit(key, offset);
-    }
-
-    @Operation(summary = "Set Bit", description = "Sets a bit to a key")
-    @Tag(name = "Bit")
-    @GetMapping("/setBit")
-    public void setBit(String key, long offset, boolean value) {
-        service.setBit(key, offset, value);
-    }
-
     @Operation(summary = "Multi Save", description = "Save multiple key-value pairs")
     @Tag(name = "Key-Value")
     @GetMapping("/multiSave")
@@ -214,19 +130,13 @@ public class MyController {
         return service.multiGet(key1, key2);
     }
 
-    @Operation(summary = "Multi set if absent", description = "Save multiple key-value pairs if the keys do not exist")
-    @Tag(name = "Key-Value")
-    @GetMapping("/multiSetIfAbsent")
-    public void multiSetIfAbsent(String key1, String value1, String key2, String value2) {
-        service.multiSetIfAbsent(key1, value1, key2, value2);
-    }
-
     @Operation(summary = "Save Hash", description = "Save a hash")
     @Tag(name = "Hash")
     @GetMapping("/saveHash")
     public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
         service.saveHash(key, name, description, likes, visitors);
     }
+
     @Operation(summary = "Get hash", description = "Gets a hash by key")
     @Tag(name = "Hash")
     @GetMapping("/getHash")
@@ -234,5 +144,11 @@ public class MyController {
         return service.getHash(key);
     }
 
+    @Operation(summary = "Get a field value from a hash", description = "Gets a field value from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/getHashFieldValue")
+    public String getHashFieldValue(String key, String field) {
+        return service.getHashValue(key, field);
+    }
 
 }
