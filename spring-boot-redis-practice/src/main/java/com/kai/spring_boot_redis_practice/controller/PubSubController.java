@@ -1,18 +1,16 @@
 package com.kai.spring_boot_redis_practice.controller;
 
-import com.kai.spring_boot_redis_practice.publisher.RedisPublisher;
-import com.kai.spring_boot_redis_practice.service.PubService;
+import com.kai.spring_boot_redis_practice.service.PubSubService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class PubController {
+public class PubSubController {
 
-    public PubService pubService;
+    public PubSubService pubService;
 
-    public PubController(PubService pubService) {
+    public PubSubController(PubSubService pubService) {
         this.pubService = pubService;
     }
 

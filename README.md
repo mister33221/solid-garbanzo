@@ -864,6 +864,16 @@ return value
 
 ## Redis 的 Pub/Sub 模式
 
+Redis 的 Pub/Sub 模式是一種消息傳遞模式，相較於其他的消息傳遞工具而言，是屬於輕量、簡單的存在。就我個人的經歷而言，這只能用在一些簡單且不重要的訊息傳遞上，如果是一些重要的訊息傳遞，還是建議使用功能比較完整且安全的消息傳遞工具。例如 RabbitMQ、Kafka 等等。
+
+我在後面提供的原始碼中有實作一個簡單的 Pub/Sub 模式，我就不多做解釋了。
+
+另外我有看到這篇文章[Redis Pub/Sub 是什麼、會造成什麼問題呢?](https://medium.com/jerrynotes/redis-pub-sub-%E6%98%AF%E4%BB%80%E9%BA%BC-%E6%9C%83%E9%80%A0%E6%88%90%E4%BB%80%E9%BA%BC%E5%95%8F%E9%A1%8C%E5%91%A2-ab5be1e5328d)，介紹 Redis 的 Pub/Sub 模式，寫得很棒~!有興趣的話可以看看。
+
+另外在 Redisinsight 中，也有提供 Pub/Sub 的功能，可以用來觀察訊息的傳遞，不過你需要先去把它 subscribe，才能看到訊息的傳遞。否則即使你有使用 publish 來發送訊息，也是看不到的。
+
+![alt text](image.png)
+
 ## 持久化
 
 ## 使用 Docker 安装 Redis Cluster
