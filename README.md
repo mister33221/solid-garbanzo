@@ -884,6 +884,12 @@ Redis 的 Pub/Sub 模式是一種消息傳遞模式，相較於其他的消息�
 
 ## Redis 的分布式鎖
 
+## 新的 Redis stack 搭配 Redis OM
+
+Redis OM 目前還是 Beta 版，所以不建議使用在專案上。不過它確實提供了很多方便的方法，就如同 Spring data JPA 差不多。
+
+有興趣的話，可以考我的另一篇文章[Skeleton of Spring Boot + Redis OM + Redis Stack](https://hackmd.io/-7OwL1VlRVKRRc1GU1xn1g)
+
 ## Reference
 - [https://redis.dev.org.tw/docs](https://redis.dev.org.tw/docs)
 - [https://redis.io/docs](https://redis.io/docs)
