@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 public class MyController {
@@ -133,27 +134,6 @@ public class MyController {
         return service.multiGet(key1, key2);
     }
 
-    @Operation(summary = "Save Hash", description = "Save a hash")
-    @Tag(name = "Hash")
-    @GetMapping("/saveHash")
-    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
-        service.saveHash(key, name, description, likes, visitors);
-    }
-
-    @Operation(summary = "Get hash", description = "Gets a hash by key")
-    @Tag(name = "Hash")
-    @GetMapping("/getHash")
-    public Map<Object, Object> getHash(String key) {
-        return service.getHash(key);
-    }
-
-    @Operation(summary = "Get a field value from a hash", description = "Gets a field value from a hash")
-    @Tag(name = "Hash")
-    @GetMapping("/getHashFieldValue")
-    public String getHashFieldValue(String key, String field) {
-        return service.getHashValue(key, field);
-    }
-
     @Operation(summary = "Save a list", description = "Save a list")
     @Tag(name = "List")
     @PostMapping("/saveList")
@@ -216,5 +196,79 @@ public class MyController {
     public void removeList(String key) {
         service.removeList(key);
     }
+
+    @Operation(summary = "Save a set", description = "Save a set")
+    @Tag(name = "Set")
+    @PostMapping("/saveSet")
+    public void saveSet(String key, @RequestBody Set<String> value) {
+        service.saveSet(key, value);
+    }
+
+    @Operation(summary = "Get a set", description = "Gets a set by key")
+    @Tag(name = "Set")
+    @GetMapping("/getSet")
+    public List<String> getSet(String key) {
+        return service.getSet(key);
+    }
+
+    @Operation(summary = "Remove a value from a set", description = "Remove a value from a set")
+    @Tag(name = "Set")
+    @GetMapping("/removeAValueFromSet")
+    public void removeAValueFromSet(String key, String value) {
+        service.removeAValueFromSet(key, value);
+    }
+
+    @Operation(summary = "Compare two sets and get the difference", description = "Compare two sets and get the difference")
+    @Tag(name = "Set")
+    @GetMapping("/difference")
+    public Set<String> difference(String key1, String key2) {
+        return service.difference(key1, key2);
+    }
+
+    @Operation(summary = "Save Hash", description = "Save a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/saveHash")
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        service.saveHash(key, name, description, likes, visitors);
+    }
+
+    @Operation(summary = "Get hash", description = "Gets a hash by key")
+    @Tag(name = "Hash")
+    @GetMapping("/getHash")
+    public Map<Object, Object> getHash(String key) {
+        return service.getHash(key);
+    }
+
+    @Operation(summary = "Get a field value from a hash", description = "Gets a field value from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/getHashFieldValue")
+    public String getHashFieldValue(String key, String field) {
+        return service.getHashValue(key, field);
+    }
+
+    @Operation(summary = "Delete a field from a hash", description = "Delete a field from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/deleteHashField")
+    public void deleteHashField(String key, String field) {
+        service.deleteHashField(key, field);
+    }
+
+    @Operation(summary = "Exists a field in a hash", description = "Exists a field in a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/existsHashField")
+    public boolean existsHashField(String key, String field) {
+        return service.existsHashField(key, field);
+    }
+
+    @Operation(summary = "Delete a hash", description = "Delete a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/deleteHash")
+    public void deleteHash(String key) {
+        service.deleteHash(key);
+    }
+
+
+
+
 
 }

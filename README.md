@@ -609,9 +609,177 @@ src
 
 ### 集合（Sets）
 
-### 有序集合（Sorted sets）
+- 新增一個集合到 Redis 中。
+    - Controller
+    ```java
+    @Operation(summary = "Save a set", description = "Save a set")
+    @Tag(name = "Set")
+    @PostMapping("/saveSet")
+    public void saveSet(String key, @RequestBody ArrayList<String> value) {
+        service.saveSet(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void saveSet(String key, ArrayList<String> value) {
+        stringRedisTemplate.opsForSet().add(key, value.toArray(new String[0]));
+    }
+    ```
+- 取得集合中的所有值。
+    - Controller
+    ```java
+    @Operation(summary = "Get a set", description = "Gets a set by key")
+    @Tag(name = "Set")
+    @GetMapping("/getSet")
+    public List<String> getSet(String key) {
+        return service.getSet(key);
+    }
+    ```
+    - Service
+    ```java
+    public List<String> getSet(String key) {
+        return new ArrayList<>(Objects.requireNonNull(stringRedisTemplate.opsForSet().members(key)));
+    }
+    ```
+- 從集合中移除某個值。
+    - Controller
+    ```java
+    @Operation(summary = "Remove a value from a set", description = "Remove a value from a set")
+    @Tag(name = "Set")
+    @GetMapping("/removeAValueFromSet")
+    public void removeAValueFromSet(String key, String value) {
+        service.removeAValueFromSet(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void removeAValueFromSet(String key, String value) {
+        stringRedisTemplate.opsForSet().remove(key, value);
+    }
+    ```
+- 比較兩個集合的差異。
+    - Controller
+    ```java
+   @Operation(summary = "Compare two sets and get the difference", description = "Compare two sets and get the difference")
+    @Tag(name = "Set")
+    @GetMapping("/difference")
+    public Set<String> difference(String key1, String key2) {
+        return service.difference(key1, key2);
+    }
+    ```
+    - Service
+    ```java
+    public Set<String> difference(String key1, String key2) {
+        return stringRedisTemplate.opsForSet().
+    }
+    ```
+- Spring data redis 提供給 Set 的方法還有很多，例如 `union`、`intersect`、`difference`、`isMember`、`size`、`members` 等等，這邊就不一一列舉了。有用到再查就好囉!
+
+### 有序集合（Sorted sets）- 暫時略過
 
 ### 哈希（Hashes）
+
+- 新增一個 hash 到 Redis 中。
+    - Controller
+    ```java
+    @Operation(summary = "Save Hash", description = "Save a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/saveHash")
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        service.saveHash(key, name, description, likes, visitors);
+    }
+    ```
+    - Service
+    ```java
+    public void saveHash(String key, String name, String description, Integer likes, Integer visitors) {
+        Map<String, String> map = new HashMap<>();
+        map.put("name", name);
+        map.put("description", description);
+        map.put("likes", likes.toString());
+        map.put("visitors", visitors.toString());
+        stringRedisTemplate.opsForHash().putAll(key, map);
+    }
+    ```
+- 取得 hash 中的所有欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Get hash", description = "Gets a hash by key")
+    @Tag(name = "Hash")
+    @GetMapping("/getHash")
+    public Map<Object, Object> getHash(String key) {
+        return service.getHash(key);
+    }
+    ```
+    - Service
+    ```java
+    public Map<Object, Object> getHash(String key) {
+        return stringRedisTemplate.opsForHash().entries(key);
+    }
+    ```
+- 取得 hash 中的某個欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Get a field value from a hash", description = "Gets a field value from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/getHashFieldValue")
+    public String getHashFieldValue(String key, String field) {
+        return service.getHashValue(key, field);
+    }
+    ```
+    - Service
+    ```java
+    public String getHashValue(String key, String field) {
+        return (String) stringRedisTemplate.opsForHash().get(key, field);
+    }
+    ```
+- 刪除 hash 中的某個欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Delete a field from a hash", description = "Delete a field from a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/deleteHashField")
+    public void deleteHashField(String key, String field) {
+        service.deleteHashField(key, field);
+    }
+    ```
+    - Service
+    ```java
+    public void deleteHashField(String key, String field) {
+        stringRedisTemplate.opsForHash().delete(key, field);
+    }
+    ```
+- 判斷 hash 中是否存在某個欄位。
+    - Controller
+    ```java
+    @Operation(summary = "Exists a field in a hash", description = "Exists a field in a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/existsHashField")
+    public boolean existsHashField(String key, String field) {
+        return service.existsHashField(key, field);
+    }
+    ```
+    - Service
+    ```java
+    public boolean existsHashField(String key, String field) {
+        return stringRedisTemplate.opsForHash().hasKey(key, field);
+    }
+    ```
+- 刪除 hash。
+    - Controller
+    ```java
+    @Operation(summary = "Delete a hash", description = "Delete a hash")
+    @Tag(name = "Hash")
+    @GetMapping("/deleteHash")
+    public void deleteHash(String key) {
+        service.deleteHash(key);
+    }
+    ```
+    - Service
+    ```java
+    public void deleteHash(String key) {
+        stringRedisTemplate.delete(key);
+    }
+    ```
 
 ### 串流（Streams）- 暫時略過
 

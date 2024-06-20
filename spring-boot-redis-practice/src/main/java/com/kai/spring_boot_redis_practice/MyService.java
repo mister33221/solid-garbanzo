@@ -134,4 +134,32 @@ public class MyService {
     public void removeList(String key) {
         stringRedisTemplate.delete(key);
     }
+
+    public void saveSet(String key, Set<String> values) {
+        stringRedisTemplate.opsForSet().add(key, values.toArray(new String[0]));
+    }
+
+    public List<String> getSet(String key) {
+        return new ArrayList<>(Objects.requireNonNull(stringRedisTemplate.opsForSet().members(key)));
+    }
+
+    public void removeAValueFromSet(String key, String value) {
+        stringRedisTemplate.opsForSet().remove(key, value);
+    }
+
+    public Set<String> difference(String key1, String key2) {
+        return stringRedisTemplate.opsForSet().difference(key1, key2);
+    }
+
+    public void deleteHashField(String key, String field) {
+        stringRedisTemplate.opsForHash().delete(key, field);
+    }
+
+    public boolean existsHashField(String key, String field) {
+        return stringRedisTemplate.opsForHash().hasKey(key, field);
+    }
+
+    public void deleteHash(String key) {
+        stringRedisTemplate.delete(key);
+    }
 }
