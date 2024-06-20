@@ -26,7 +26,7 @@ Redis支援多種資料結構，包括：
 
 雖然很重要，但本篇主要會把重點放在跟 Spring Boot 整合 Redis 的部分，如果想了解更多的話可以參考[Redis英文官方文件](https://redis.io/docs/latest/develop/data-types/)，或是[Redis中文官方文件](https://redis.dev.org.tw/docs/data-types/)。
 
-### 持久畫
+### 持久化
 
 Redis提供了兩種持久化方法：
 
