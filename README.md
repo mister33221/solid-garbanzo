@@ -793,6 +793,75 @@ src
 
 ## 使用 Lua 脚本執行 Redis 命令
 
+當我們在使用 Spring boot 整合 Redis 時，有時會需要執行一些複雜的 Redis 命令操作，如果我們都使用 Spring data Redis 提供的方法，會遇到幾個問題：
+- 需要多次進出 Redis，破壞了原子性。
+- 需要多次網路請求，增加了網路延遲與開銷。
+- 邏輯過於複雜，無法使用 Spring data Redis 提供的方法。
+那麼，這時候我們可以使用 Lua 脚本來執行 Redis 命令，Lua 脚本可以保證原子性，並且可以減少網路請求。
+
+那我們要怎麼在 Spring boot 中使用 Lua 脚本呢？我們可以使用 `StringRedisTemplate` 的 `execute` 方法來執行 Lua 脚本。
+
+1. 先新開一個 'LuaController' 類別，並且加上 `@RestController` 註解，並注入 `LuaService` 類別。
+```java
+@RestController
+public class LuaController {
+
+    public final LuaService luaService;
+
+    public LuaController(LuaService luaService) {
+        this.luaService = luaService;
+    }
+    
+}
+```
+2. 新開一個 'LuaService' 類別，並且加上 `@Service` 註解，並注入 `StringRedisTemplate` 類別。
+```java
+@Service
+public class LuaService {
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final DefaultRedisScript<String> redisScript; 
+
+    public LuaService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        redisScript = new DefaultRedisScript<>();
+    }
+}
+```
+3. 在存放靜態資源的資料夾 `resources` 中，新增一個 Lua 脚本檔案，例如 `test.lua`。
+4. 在 `test.lua` 中寫入 Lua 脚本。
+```lua
+-- 設置一個鍵值對
+redis.call('SET', 'mykey', 'myvalue')
+
+-- 獲取鍵的值
+local value = redis.call('GET', 'mykey')
+
+-- 返回鍵的值
+return value
+```
+5. 在 `LuaService` 類別中新增一個方法，用來執行 Lua 脚本。
+```java
+    public String executeLuaScript() {
+        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("test.lua")));
+        redisScript.setResultType(String.class);
+        return stringRedisTemplate.execute(redisScript, Collections.emptyList());
+    }
+```
+6. 在 `LuaController` 類別中新增一個方法，用來執行 Lua 脚本。
+```java
+    @Operation(summary = "Execute Lua script", description = "Execute Lua script")
+    @Tag(name = "Lua")
+    @GetMapping("/executeLuaScript")
+    public String executeLuaScript() {
+        return luaService.executeLuaScript();
+    }
+```
+
+7. 最後我們就到我們的 Swagger 介面中，測試我們的 API 吧!觸發以後就會回傳 `myvalue` 囉!
+8. 也可以到我們的 RedisInsight 中，查看是否有成功設置 `mykey` 的值。
+
 ## Redis 的 Pub/Sub 模式
 
 ## 持久化
