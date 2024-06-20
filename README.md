@@ -459,7 +459,153 @@ src
 
 ### 列表（Lists）
 
-
+- 新增一個列表到 Redis 中。如果你有一個列表想要加到現有的列表後面，也一樣使用這個方法。
+    - Controller
+    ```java
+    @Operation(summary = "Save a list", description = "Save a list")
+    @Tag(name = "List")
+    @PostMapping("/saveList")
+    public void saveList(String key, @RequestBody ArrayList<String> value) {
+        service.saveList(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void saveList(String key, ArrayList<String> values) {
+        stringRedisTemplate.opsForList().rightPushAll(key, values);
+    }
+    ```
+- 取得列表中的所有值。
+    - Controller
+    ```java
+    @Operation(summary = "Get a list", description = "Gets a list by key")
+    @Tag(name = "List")
+    @GetMapping("/getList")
+    public List<String> getList(String key) {
+        return service.getList(key);
+    }
+    ```
+    - Service
+    ```java
+    public List<String> getList(String key) {
+        return stringRedisTemplate.opsForList().range(key, 0, -1);
+    }
+    ```
+- 新增一個值到列表的尾部
+    - Controller
+    ```java
+    @Operation(summary = "Add a value to the end of a list", description = "Add a value to the end of a list")
+    @Tag(name = "List")
+    @GetMapping("/addAValueToEndOfList")
+    public void addAValueToEndOfList(String key, String value) {
+        service.addAValueToEndOfList(key, value);
+    }
+    ```
+    - Service
+    ```java
+    public void addAValueToEndOfList(String key, String value) {
+        stringRedisTemplate.opsForList().rightPush(key, value);
+    }
+    ```
+- 新增一個值到列表的頭部
+    - Controller
+    ```java
+    @Operation(summary = "Add a value to the beginning of a list", description = "Add a value to the beginning of a list")
+    @Tag(name = "List")
+    @GetMapping("/addAValueToBeginningOfList")
+    public void addAValueToBeginningOfList(String key, String value) {
+        service.addAValueToBeginningOfList(key, value);
+    }
+    ```
+    - Service
+    ```java
+    @Operation(summary = "Add a value to the beginning of a list", description = "Add a value to the beginning of a list")
+    @Tag(name = "List")
+    @GetMapping("/addAValueToBeginningOfList")
+    public void addAValueToBeginningOfList(String key, String value) {
+        service.addAValueToBeginningOfList(key, value);
+    }
+    ```
+- 從列表的尾部 pop 取得一個值，並且於列表中移除。
+    - Controller
+    ```java
+    @Operation(summary = "Pop a value from the end of a list", description = "Pop a value from the end of a list. After popping, the value is removed from the list.")
+    @Tag(name = "List")
+    @GetMapping("/popAValueFromEndOfList")
+    public String popAValueFromEndOfList(String key) {
+        return service.popAValueFromEndOfList(key);
+    }
+    ```
+    - Service
+    ```java
+    public String popAValueFromEndOfList(String key) {
+        return stringRedisTemplate.opsForList().rightPop(key);
+    }
+    ```
+- 從列表的頭部 pop 取得一個值，並且於列表中移除。
+    - Controller
+    ```java
+    @Operation(summary = "Pop a value from the beginning of a list", description = "Pop a value from the beginning of a list. After popping, the value is removed from the list.")
+    @Tag(name = "List")
+    @GetMapping("/popAValueFromBeginningOfList")
+    public String popAValueFromBeginningOfList(String key) {
+        return service.popAValueFromBeginningOfList(key);
+    }
+    ```
+    - Service
+    ```java
+    public String popAValueFromBeginningOfList(String key) {
+        return stringRedisTemplate.opsForList().leftPop(key);
+    }
+    ```
+- 取得某個 index 的值。
+    - Controller
+    ```java
+   @Operation(summary = "Get a value from a list by index", description = "Get a value from a list by index")
+    @Tag(name = "List")
+    @GetMapping("/getAValueFromListByIndex")
+    public String getAValueFromListByIndex(String key, long index) {
+        return service.getAValueFromListByIndex(key, index);
+    }
+    ```
+    - Service
+    ```java
+    public String getAValueFromListByIndex(String key, long index) {
+        return stringRedisTemplate.opsForList().index(key, index);
+    }
+    ```
+- 以 index 從列表中移除某個值。
+    - Controller
+    ```java
+    @Operation(summary = "Remove a value from a list by index", description = "Remove a value from a list by index")
+    @Tag(name = "List")
+    @GetMapping("/removeAValueFromListByIndex")
+    public void removeAValueFromListByIndex(String key, long index, String value) {
+        service.removeAValueFromListByIndex(key, index, value);
+    }
+    ```
+    - Service
+    ```java
+    public void removeAValueFromListByIndex(String key, long index, String value) {
+        stringRedisTemplate.opsForList().remove(key, index, value);
+    }
+    ```
+- 移除列表
+    - Controller
+    ```java
+    @Operation(summary = "Remove a list", description = "Remove a list")
+    @Tag(name = "List")
+    @GetMapping("/removeList")
+    public void removeList(String key) {
+        service.removeList(key);
+    }
+    ```
+    - Service
+    ```java
+    public void removeList(String key) {
+        stringRedisTemplate.delete(key);
+    }
+    ```
 
 ### 集合（Sets）
 

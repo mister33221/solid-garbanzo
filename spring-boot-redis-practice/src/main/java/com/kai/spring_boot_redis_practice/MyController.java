@@ -4,8 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -149,6 +152,69 @@ public class MyController {
     @GetMapping("/getHashFieldValue")
     public String getHashFieldValue(String key, String field) {
         return service.getHashValue(key, field);
+    }
+
+    @Operation(summary = "Save a list", description = "Save a list")
+    @Tag(name = "List")
+    @PostMapping("/saveList")
+    public void saveList(String key, @RequestBody ArrayList<String> value) {
+        service.saveList(key, value);
+    }
+
+    @Operation(summary = "Get a list", description = "Gets a list by key")
+    @Tag(name = "List")
+    @GetMapping("/getList")
+    public List<String> getList(String key) {
+        return service.getList(key);
+    }
+
+    @Operation(summary = "Add a value to the end of a list", description = "Add a value to the end of a list")
+    @Tag(name = "List")
+    @GetMapping("/addAValueToEndOfList")
+    public void addAValueToEndOfList(String key, String value) {
+        service.addAValueToEndOfList(key, value);
+    }
+
+    @Operation(summary = "Add a value to the beginning of a list", description = "Add a value to the beginning of a list")
+    @Tag(name = "List")
+    @GetMapping("/addAValueToBeginningOfList")
+    public void addAValueToBeginningOfList(String key, String value) {
+        service.addAValueToBeginningOfList(key, value);
+    }
+
+    @Operation(summary = "Pop a value from the end of a list", description = "Pop a value from the end of a list. After popping, the value is removed from the list.")
+    @Tag(name = "List")
+    @GetMapping("/popAValueFromEndOfList")
+    public String popAValueFromEndOfList(String key) {
+        return service.popAValueFromEndOfList(key);
+    }
+
+    @Operation(summary = "Pop a value from the beginning of a list", description = "Pop a value from the beginning of a list. After popping, the value is removed from the list.")
+    @Tag(name = "List")
+    @GetMapping("/popAValueFromBeginningOfList")
+    public String popAValueFromBeginningOfList(String key) {
+        return service.popAValueFromBeginningOfList(key);
+    }
+
+    @Operation(summary = "Get a value from a list by index", description = "Get a value from a list by index")
+    @Tag(name = "List")
+    @GetMapping("/getAValueFromListByIndex")
+    public String getAValueFromListByIndex(String key, long index) {
+        return service.getAValueFromListByIndex(key, index);
+    }
+
+    @Operation(summary = "Remove a value from a list by index", description = "Remove a value from a list by index")
+    @Tag(name = "List")
+    @GetMapping("/removeAValueFromListByIndex")
+    public void removeAValueFromListByIndex(String key, long index, String value) {
+        service.removeAValueFromListByIndex(key, index, value);
+    }
+
+    @Operation(summary = "Remove the list", description = "Remove the list")
+    @Tag(name = "List")
+    @GetMapping("/removeList")
+    public void removeList(String key) {
+        service.removeList(key);
     }
 
 }

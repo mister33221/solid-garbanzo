@@ -98,4 +98,40 @@ public class MyService {
     public String getHashValue(String key, String field) {
         return (String) stringRedisTemplate.opsForHash().get(key, field);
     }
+
+    public void saveList(String key, ArrayList<String> values) {
+        stringRedisTemplate.opsForList().rightPushAll(key, values);
+    }
+
+    public List<String> getList(String key) {
+        return stringRedisTemplate.opsForList().range(key, 0, -1);
+    }
+
+    public void addAValueToEndOfList(String key, String value) {
+        stringRedisTemplate.opsForList().rightPush(key, value);
+    }
+
+    public void addAValueToBeginningOfList(String key, String value) {
+        stringRedisTemplate.opsForList().leftPush(key, value);
+    }
+
+    public String popAValueFromEndOfList(String key) {
+        return stringRedisTemplate.opsForList().rightPop(key);
+    }
+
+    public String popAValueFromBeginningOfList(String key) {
+        return stringRedisTemplate.opsForList().leftPop(key);
+    }
+
+    public String getAValueFromListByIndex(String key, long index) {
+        return stringRedisTemplate.opsForList().index(key, index);
+    }
+
+    public void removeAValueFromListByIndex(String key, long index, String value) {
+        stringRedisTemplate.opsForList().remove(key, index, value);
+    }
+
+    public void removeList(String key) {
+        stringRedisTemplate.delete(key);
+    }
 }
