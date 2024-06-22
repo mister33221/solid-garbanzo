@@ -56,7 +56,7 @@ docker run --name my-redis -d -p 6379:6379 --name <your-redis-container-name> re
 - 因為我不想使用 Redis 原生的 CLI，而且 Redis 後來來有推出一個可以用來檢視 Redis 的 GUI 工具，叫做 RedisInsight，可以參考[RedisInsight](https://redis.io/docs/latest/operate/redisinsight/install/)。可以使用 Docker 安裝，非常方便。我們直接使用 Docker 安裝 RedisInsight：
 
 ```bash
-docker run -d --name redisinsight -p 5540:5540 --name <your-redisinsight-container-name> redis/redisinsight:latest
+docker run --name my-redis -d -p 6379:6379 --name <your-redis-container-name> redis
 ```
 
 - 我把以上的 redis 和 redisinsight 用 docker compose 包起來，這樣我直接在專案目錄底下使用 `docker-compose up -d` 就可以一次啟動兩個容器了。
