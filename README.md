@@ -876,6 +876,82 @@ Redis 的 Pub/Sub 模式是一種消息傳遞模式，相較於其他的消息�
 
 ## 持久化
 
+Redis 提供了兩種持久化的方式，分別是 RDB 和 AOF。
+在一開始的時候我們大概介紹了，這邊我們就不多廢話了。
+
+直接來看怎麼設定吧!
+
+> 我們可以在 Redis 的[官方網站](https://redis.io/docs/latest/operate/oss_and_stack/management/config-file/)上找到完整個 Redis config 設定。     
+> 跟大部分的 config 檔案一樣，我們只需要在 config 檔案中加入我們要的設定就好了。所以以下我們只會列出我們要的設定。
+
+1. 先在我們的專案底下開一個資料夾叫做 `redis`，然後在裡面新增一個檔案叫做 `redis.conf`。
+2. 在 `redis.conf` 中加入以下設定。
+> 這裡稍微注意一下，註解如果寫在你的設定後面，例如 `save 30 1 # 這是一個註解`，可能會導致錯誤，所以建議註解寫在設定上面。
+```conf
+# 啟用RDB持久化
+# 快照的產生會覆蓋掉原本的快照，不會造成快照的累積
+# 如果至少有 1 個 key 被修改，那在 900 秒內就要進行一次快照來保存這個修改
+save 30 1
+# 如果至少有 10 個 key 被修改，那在 300 秒內就要進行一次快照來保存這個修改
+save 20 10
+# 如果至少有 10000 個 key 被修改，那在 60 秒內就要進行一次快照來保存這個修改
+save 10 10000
+
+# 啟用AOF持久化
+# 每秒同步一次，其他還有always, no
+appendonly yes
+appendfsync everysec
+
+# 當 AOF 文件增長為上次重寫時的 100% 時，觸發 AOF 重寫，來維持 AOF 文件的大小，使文件不會一直不斷增長
+auto-aof-rewrite-percentage 100
+
+# 當 AOF 文件當小成長到 64MB 時，觸發 AOF 重寫
+auto-aof-rewrite-min-size 64mb
+```
+3. 接下來要去修改我們的 `docker-compose.yml` 檔案，把我們的 `redis.confg` 掛載到我們的 Redis 容器中，同時也要把我們在 Redis 容器中產生的持久化檔案(RDB 和 AOF)掛載到我們的本機中，這樣當我們的 Redis 容器被刪除時，我們的持久化檔案還是會存在。
+```yml
+version: '3.8'
+
+services:
+  redis:
+    image: redis # 使用 Redis 官方的 image
+    container_name: my-redis # 容器的名稱
+    ports:
+      - "6379:6379" # 將本機的 6379 port 對應到容器的 6379 port
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf # 將本機的 redis.conf 掛載到容器的 /usr/local/etc/redis/redis.conf
+      - ./redis/redis-data:/data # 將容器的 /data 掛載到本機的 redis-data
+    command: redis-server /usr/local/etc/redis/redis.conf # 啟動 Redis 時，使用我們的 redis.conf
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: my-redisinsight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+```
+4. 接下來就在我們的 `docker-compose.yml` 檔案所在的資料夾中，開啟終端機，輸入以下指令，啟動我們的 Redis 容器。這裡我們不使用 `-d` 參數，我們來觀察一下 Redis 的 log。
+```bash
+docker-compose up 
+```
+    我們可以看到 Redis 的 log 中有以下訊息，啟動或讀取了我們的 RDB 及 AOF 檔案。
+![alt text](image-1.png)
+5. 我們也可以發現這時在我們的 `redis-data` 資料夾中，多了三個檔案。當我們的 container 被刪除又重新啟動時，就會把這三個檔案掛載到我們的 Redis 容器中，這樣就可以保證我們的 Redis 持久化檔案不會遺失。
+    - appendonly.aof.1.base.rdb，這是我們的 RDB 檔案。
+    - appendonly.aof.1.incr.aof，這是我們的 AOF 檔案。
+    - appendonly.aof.manifest，這是我們的 AOF manifest 檔案。
+6. 我們也可以使用已下指令到 redis 的容器中看看我們的持久化檔案。
+```bash
+docker exec -it my-redis /bin/bash
+```
+    進入容器後，我們可以使用 `ls` 指令看看我們的持久化檔案。
+```bash
+ls /data/appendonlydir
+```
+    我們可以看到上述的那三個檔案。
+7. 接下來我們可以使用前面寫好的那些 Redis 的操作，來存入一些資料，接著把 Redis 的容器刪除，然後再重新啟動 Redis 的容器，我們就可以看到我們的資料還在。
+
 ## 使用 Docker 安装 Redis Cluster
 
 ## Spring boot 整合 Redis Cluster
