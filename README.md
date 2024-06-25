@@ -954,7 +954,11 @@ ls /data/appendonlydir
 
 ## 使用 Docker 安装 Redis Cluster
 
-TODO 我要好好介紹一下 Redis Cluster，有空再寫，在真實的專案底下，會把 Master 和 Slave 分開，這樣才能保證高可用性。不過現在我們在練習，所以事件例都在同一個網路底下的 Cluster，如果要建立在不同網路底下，就只要把範例的 docker compose 拆開就好了。
+### 為什麼要使用 Redis Cluster
+
+- 單節點(single node/standalone)的 Redis 當資料量過大時，容量會遇到瓶頸，也無法擴展。而 Redis Cluster 是一個分散式的 Redis，可以將資料分散到多個節點上，這樣就可以擴展 Redis 的容量。
+- Redis Cluster 也提供了高可用性，當某個節點掛掉時，其他節點還是可以正常運作。
+
 
 - docker-compose.yml
 ```yml
