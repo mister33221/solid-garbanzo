@@ -1,89 +1,3 @@
-#version: "3"
-#services:
-#  redisinsight :
-#    image: redis/redisinsight:latest
-#    container_name: my-redisinsight
-#    ports:
-#      - "5540:5540"
-#  redis1:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7000:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis2:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7001:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis3:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7002:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis4:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7003:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis5:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7004:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis6:
-#    image: redis:latest
-#    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
-#    ports:
-#      - "7005:6379"
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "cluster", "info" ]
-#      interval: 1s
-#      timeout: 3s
-#      retries: 30
-#  redis-cluster-creator:
-#    image: redis
-#    entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli --cluster create redis1:6379 redis2:6379 redis3:6379 redis4:6379 redis5:6379 redis6:6379 --cluster-replicas 1']
-#    depends_on:
-#      redis1:
-#        condition: service_healthy
-#      redis2:
-#        condition: service_healthy
-#      redis3:
-#        condition: service_healthy
-#      redis4:
-#        condition: service_healthy
-#      redis5:
-#        condition: service_healthy
-#      redis6:
-#        condition: service_healthy
-
-
-
 version: '3.4'
 
 services:
@@ -96,27 +10,15 @@ services:
     build:
       context: redis
     ports:
-      - "7000:7000"
-      - "17000:17000"
+      - "7001:7001"
+      - "17001:17001"
     restart: always
-    entrypoint: [redis-server, /etc/redis/rediscluster.conf, --port,"7000", --cluster-announce-ip,"${ip}"]
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf, --port,"7001", --cluster-announce-ip,"${ip}"]
     #network_mode: host
     volumes:
       #      - ./data/node1:/data
       - ./logs/node1:/root/redis/log
   redis-node2:
-    build:
-      context: redis
-    ports:
-      - "7001:7001"
-      - "17001:17001"
-    restart: always
-    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7001",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
-    volumes:
-      #      - ./data/node2:/data
-      - ./logs/node2:/root/redis/log
-  redis-node3:
     build:
       context: redis
     ports:
@@ -126,9 +28,9 @@ services:
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7002",--cluster-announce-ip,"${ip}"]
     #network_mode: host
     volumes:
-      #      - ./data/node3:/data
-      - ./logs/node3:/root/redis/log
-  redis-node4:
+      #      - ./data/node2:/data
+      - ./logs/node2:/root/redis/log
+  redis-node3:
     build:
       context: redis
     ports:
@@ -138,9 +40,9 @@ services:
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7003",--cluster-announce-ip,"${ip}"]
     #network_mode: host
     volumes:
-      #      - ./data/node4:/data
-      - ./logs/node4:/root/redis/log
-  redis-node5:
+      #      - ./data/node3:/data
+      - ./logs/node3:/root/redis/log
+  redis-node4:
     build:
       context: redis
     ports:
@@ -150,9 +52,9 @@ services:
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7004",--cluster-announce-ip,"${ip}"]
     #network_mode: host
     volumes:
-      #      - ./data/node5:/data
-      - ./logs/node5:/root/redis/log
-  redis-node6:
+      #      - ./data/node4:/data
+      - ./logs/node4:/root/redis/log
+  redis-node5:
     build:
       context: redis
     ports:
@@ -162,13 +64,24 @@ services:
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7005",--cluster-announce-ip,"${ip}"]
     #network_mode: host
     volumes:
+      #      - ./data/node5:/data
+      - ./logs/node5:/root/redis/log
+  redis-node6:
+    build:
+      context: redis
+    ports:
+      - "7006:7006"
+      - "17006:17006"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7006",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
       #      - ./data/node6:/data
       - ./logs/node6:/root/redis/log
 
   redis-cluster-creator:
     image: redis:6.0.3
-    entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli -a pass.123 --cluster create ${ip}:7000 ${ip}:7001 ${ip}:7002 ${ip}:7003 ${ip}:7004 ${ip}:7005 --cluster-replicas 1']
-    # entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli -a pass.123 --cluster create ${ip}:7000 ${ip}:7001 ${ip}:7002 --cluster-replicas 0 && echo "yes" | redis-cli -a pass.123 --cluster add-node ${ip}:7005 ${ip}:7000 --cluster-slave && echo "yes" | redis-cli -a pass.123 --cluster add-node ${ip}:7004 ${ip}:7001 --cluster-slave && echo "yes" | redis-cli -a pass.123 --cluster add-node ${ip}:7003 ${ip}:7002 --cluster-slave']
+    entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli -a pass.123 --cluster create ${ip}:7001 ${ip}:7002 ${ip}:7003 ${ip}:7004 ${ip}:7005 ${ip}:7006 --cluster-replicas 1']
     depends_on:
       - redis-node1
       - redis-node2
