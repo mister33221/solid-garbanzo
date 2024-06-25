@@ -954,7 +954,233 @@ ls /data/appendonlydir
 
 ## 使用 Docker 安装 Redis Cluster
 
+TODO 我要好好介紹一下 Redis Cluster，有空再寫，在真實的專案底下，會把 Master 和 Slave 分開，這樣才能保證高可用性。不過現在我們在練習，所以事件例都在同一個網路底下的 Cluster，如果要建立在不同網路底下，就只要把範例的 docker compose 拆開就好了。
+
+- docker-compose.yml
+```yml
+version: '3.4'
+
+services:
+  redisinsight :
+    image: redis/redisinsight:latest
+    container_name: my-redisinsight
+    ports:
+      - "5540:5540"
+  redis-node1:
+    build:
+      context: redis
+    ports:
+      - "7001:7001"
+      - "17001:17001"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf, --port,"7001", --cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node1:/data
+      - ./logs/node1:/root/redis/log
+  redis-node2:
+    build:
+      context: redis
+    ports:
+      - "7002:7002"
+      - "17002:17002"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7002",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node2:/data
+      - ./logs/node2:/root/redis/log
+  redis-node3:
+    build:
+      context: redis
+    ports:
+      - "7003:7003"
+      - "17003:17003"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7003",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node3:/data
+      - ./logs/node3:/root/redis/log
+  redis-node4:
+    build:
+      context: redis
+    ports:
+      - "7004:7004"
+      - "17004:17004"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7004",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node4:/data
+      - ./logs/node4:/root/redis/log
+  redis-node5:
+    build:
+      context: redis
+    ports:
+      - "7005:7005"
+      - "17005:17005"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7005",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node5:/data
+      - ./logs/node5:/root/redis/log
+  redis-node6:
+    build:
+      context: redis
+    ports:
+      - "7006:7006"
+      - "17006:17006"
+    restart: always
+    entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7006",--cluster-announce-ip,"${ip}"]
+    #network_mode: host
+    volumes:
+      #      - ./data/node6:/data
+      - ./logs/node6:/root/redis/log
+
+  redis-cluster-creator:
+    image: redis:6.0.3
+    entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli -a pass.123 --cluster create ${ip}:7001 ${ip}:7002 ${ip}:7003 ${ip}:7004 ${ip}:7005 ${ip}:7006 --cluster-replicas 1']
+    depends_on:
+      - redis-node1
+      - redis-node2
+      - redis-node3
+      - redis-node4
+      - redis-node5
+      - redis-node6
+```
+- Dockerfile
+```Dockerfile
+FROM redis:6.0.3
+COPY rediscluster.conf /etc/redis/rediscluster.conf
+ENTRYPOINT redis-server /etc/redis/rediscluster.conf
+```
+- rediscluster.conf
+```conf
+# ip
+bind 0.0.0.0
+# 啟用 cluster
+cluster-enabled yes
+# 指定 cluster config 檔案
+cluster-config-file nodes.conf
+# 指定 node 無法連線時間
+cluster-node-timeout 5000
+#設置主服務的連接密碼
+masterauth pass.123
+#設置從服務的連接密碼
+requirepass pass.123
+logfile "/root/redis/log/redis.log"
+```
+- .env
+```env
+ip=10.1.201.98
+```
+- 使用 docker-compose 啟動 Redis Cluster
+```bash
+docker-compose up
+```
+
 ## Spring boot 整合 Redis Cluster
+
+- 到 Spring initializr 上建立一個新的專案，並且加入以下的 dependencies。
+    - lombok
+    - devtools
+    - spring-boot-starter-data-redis
+    - spring-boot-starter-web
+- 另外自己加入方便測試的 swagger
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.0.2</version>
+</dependency>
+```
+- spring boot 的 application.yml
+```yml
+spring:
+  application:
+    name: spring-boot-redis-cluster-practice
+  data:
+    redis:
+      cluster:
+        nodes:
+          - 10.1.201.98:7000
+          - 10.1.201.98:7001
+          - 10.1.201.98:7002
+          - 10.1.201.98:7003
+          - 10.1.201.98:7004
+          - 10.1.201.98:7005
+      password: pass.123
+```
+- SwaggerConfig.java
+```java
+@OpenAPIDefinition(
+        info = @Info(
+                title = "Spring Boot integration with single node Redis practice",
+                version = "0.0"
+        )
+)
+@Configuration
+public class SwaggerConfig {
+}
+```
+- MyController.java
+```java
+@RestController
+public class MyController {
+
+    private final MyService service;
+
+    public MyController(MyService service) {
+        this.service = service;
+    }
+
+    @Operation(summary = "Hello World", description = "Returns a simple Hello World message")
+    @Tag(name = "Hello World")
+    @GetMapping("/")
+    public String helloWorld() {
+        return "Hello World!";
+    }
+
+    @Operation(summary = "Save", description = "Save a key-value pair")
+    @Tag(name = "Key-Value")
+    @GetMapping("/save")
+    public void save(@Parameter(description = "The key") String key, @Parameter(description = "The value") String value) {
+        service.save(key, value);
+    }
+
+    @Operation(summary = "Get", description = "Gets a value by key")
+    @Tag(name = "Key-Value")
+    @GetMapping("/get")
+    public String get(@Parameter(description = "The key") String key) {
+        return service.get(key);
+    }
+    
+}
+```
+- MyService.java
+```java
+@Service
+public class MyService {
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public MyService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+
+    public void save(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
+
+    public String get(String key) {
+        return stringRedisTemplate.opsForValue().get(key);
+    }
+}
+```
+- 啟動 Spring boot 專案，並且到 Swagger 介面中測試我們的 API。
 
 ## Redis Cluster 的基本操作
 
