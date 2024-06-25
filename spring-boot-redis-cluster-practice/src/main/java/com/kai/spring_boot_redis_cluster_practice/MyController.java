@@ -36,6 +36,4 @@ public class MyController {
         return service.get(key);
     }
 
-
-
 }

@@ -21,6 +21,4 @@ public class MyService {
     public String get(String key) {
         return stringRedisTemplate.opsForValue().get(key);
     }
-
-
 }

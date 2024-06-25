@@ -10,13 +10,6 @@ import org.springframework.context.annotation.Configuration;
                 version = "0.0"
         )
 )
-// 如果有使用JWT的話 就可以使用以下這些 來使 swagger頁面產生一個 Authorize的按鈕，在其中輸入token就可以使用那些被鎖住的功能
-//@SecurityScheme(
-//        name = "Bearer Authentication",
-//        type = SecuritySchemeType.HTTP,
-//        bearerFormat = "JWT",
-//        scheme = "bearer"
-//)
 @Configuration
 public class SwaggerConfig {
 }
