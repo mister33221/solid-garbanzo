@@ -1,4 +1,4 @@
-package com.kai.spring_boot_redis_cluster_practice;
+package com.kai.spring_boot_redis_cluster_practice.service;
 
 
 import org.springframework.data.redis.core.StringRedisTemplate;

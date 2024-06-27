@@ -1,5 +1,6 @@
-package com.kai.spring_boot_redis_cluster_practice;
+package com.kai.spring_boot_redis_cluster_practice.controller;
 
+import com.kai.spring_boot_redis_cluster_practice.service.MyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -12,3 +12,4 @@ spring:
           - 10.1.201.98:7004
           - 10.1.201.98:7005
       password: pass.123
+#      read-from-replica: true # doesn't exist. TODO
