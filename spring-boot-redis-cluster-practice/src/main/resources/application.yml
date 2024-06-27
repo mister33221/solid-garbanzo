@@ -1,15 +1,18 @@
 spring:
   application:
     name: spring-boot-redis-cluster-practice
+  config:
+    import: classpath:ip.properties
   data:
     redis:
       cluster:
         nodes:
-          - 10.1.201.98:7000
-          - 10.1.201.98:7001
-          - 10.1.201.98:7002
-          - 10.1.201.98:7003
-          - 10.1.201.98:7004
-          - 10.1.201.98:7005
-      password: pass.123
-#      read-from-replica: true # doesn't exist. TODO
+          - ${ip}:7000
+          - ${ip}:7001
+          - ${ip}:7002
+          - ${ip}:7003
+          - ${ip}:7004
+          - ${ip}:7005
+      password: ${redis.password}
+
+

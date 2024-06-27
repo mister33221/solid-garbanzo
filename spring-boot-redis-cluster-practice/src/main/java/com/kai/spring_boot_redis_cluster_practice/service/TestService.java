@@ -1,10 +1,16 @@
 package com.kai.spring_boot_redis_cluster_practice.service;
 
+import io.lettuce.core.cluster.RedisClusterClient;
+import io.lettuce.core.cluster.models.partitions.Partitions;
 import org.springframework.data.redis.connection.RedisClusterNode;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -87,14 +93,34 @@ public class TestService {
         return keyLocations;
     }
 
-    public String testReadWriteSplitting() {
-        String key = "readWriteSplittingKey";
-        String value = "readWriteSplittingValue";
+    public Map<String, List<String>> testReadWriteSplitting(String key, String value, int readCount) {
+        Map<String, List<String>> result = new HashMap<>();
 
+        // Write operation
         redisTemplate.opsForValue().set(key, value);
+        result.put("write", List.of(getNodeInfo()));
 
-        String retrievedValue = redisTemplate.opsForValue().get(key);
+        // Read operations
+        List<String> readNodes = new ArrayList<>();
+        for (int i = 0; i < readCount; i++) {
+            redisTemplate.opsForValue().get(key);
+            readNodes.add(getNodeInfo());
+        }
+        result.put("read", readNodes);
 
-        return "Original value: " + value + ", Retrieved value: " + retrievedValue;
+        return result;
+    }
+
+    private String getNodeInfo() {
+        RedisConnectionFactory connectionFactory = redisTemplate.getConnectionFactory();
+        RedisClusterClient clusterClient = (RedisClusterClient) connectionFactory.getConnection().getNativeConnection();
+        Partitions partitions = clusterClient.getPartitions();
+        String currentNode = partitions.getPartition(getSlot("test".getBytes())).getNodeId();
+        return currentNode;
+    }
+
+    private int getSlot(byte[] key) {
+        RedisConnection connection = redisTemplate.getConnectionFactory().getConnection();
+        return connection.keyCommands().
     }
 }

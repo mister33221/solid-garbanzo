@@ -3,8 +3,10 @@ package com.kai.spring_boot_redis_cluster_practice.controller;
 import com.kai.spring_boot_redis_cluster_practice.service.TestService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -103,6 +105,22 @@ public class TestController {
     @RequestMapping("/test-read-write-splitting")
     public String testReadWriteSplitting() {
         return testService.testReadWriteSplitting();
+    }
+
+    @Operation(
+            summary = "Test read/write splitting",
+            description = """
+            讀寫分離 (Read/Write Splitting)
+            
+            Redis Cluster 支持從主節點寫入數據，從從節點讀取數據，這可以提高讀取性能。
+            
+            測試案例：
+            一次寫操作和多次讀操作，並記錄每次操作使用的節點。
+            獲取當前操作使用的 Redis 節點的信息，包括節點 ID 和角色（主節點或副本節點）。
+            """)
+    @RequestMapping("/test-read-write-splitting")
+    public Map<String, List<String>> testReadWriteSplitting(@RequestParam String key, @RequestParam String value, @RequestParam(defaultValue = "10") int readCount) {
+        return testService.testReadWriteSplitting(key, value, readCount);
     }
 
 

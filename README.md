@@ -1014,26 +1014,36 @@ graph TD
 
 ### 使用 Docker 安裝 Redis Cluster
 
-- 先開一個叫做 `.env` 的檔案，並且加入以下設定。當使用 `docker compose up` 時，Docker 會讀取這個檔案，並且將這些設定注入到我們的 `docker-compose.yml` 檔案中。
+- 先開一個叫做 `.env` 的檔案，並且加入以下設定。當使用 `docker compose up` 時，Docker 會讀取這個檔案，並且將這些設定注入到我們的 `docker-compose.yml` 檔案中。這裡的 `ip` 請使用你正在使用的 網路 IPv4 位址。你可以使用 `ipconfig` 或 `ifconfig` 來查看你的 IPv4 位址。
 ```env
-ip=10.1.201.98
+ip=<your ip>
 ```
 - docker-compose.yml
     - `redis/redisinsight:latest`:
         - RedisInsight 是一個 Redis 的 GUI 工具，可以用來查看 Redis 的資料、設定、監控等等。
     - 為什麼除了 Redis 的 Port 外，還要多開一個加 10000 的 Port?
-        - 每個 Redis Cluster 節點需要兩個開放的 TCP 連接。一個用於服務客戶端的 Redis TCP 端口，例如 7001，另一個稱為集群總線端口。默認情況下，集群總線端口是通過在數據端口上加 10000 設置的（例如 17001）
+        - 每個 Redis Cluster 節點需要兩個開放的 TCP 連接。一個用於服務客戶端的 Redis TCP 端口，例如 7001，另一個稱為集群總線端口。默認情況下，集群總線端口是通過在數據端口上加 10000 設置的（例如 17001）。相關內容可以參考[官方文件](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)
         - 集群總線是一個節點間的通信通道，使用二進制協議進行通信，這種協議更適合節點間的信息交換，因為它佔用的帶寬和處理時間較少。節點使用集群總線進行故障檢測、配置更新、故障轉移授權等操作。客戶端不應該嘗試與集群總線端口通信，而應使用 Redis 命令端口。然而，請確保在防火牆中開放這兩個端口，否則 Redis 集群節點之間將無法通信。
         - 為了讓 Redis Cluster 正常工作：
             - 集群總線端口必須能夠被所有其他集群節點訪問
             - 客戶端通信端口（通常為 6379），用於與客戶端通信，並且應對所有需要訪問集群的客戶端開放，以及所有使用該端口進行鍵遷移的其他集群節點開放。
     - Docker 使用 NAT(Network Address Translation) 來實現容器與外部網路的通信，因此在容器中無法直接訪問外部網路。因此，我們需要將容器的端口映射到主機的端口，這樣我們才能通過主機的端口訪問容器的端口。
     - 然而 Redis Cluster 目前並不支援 NAT，也就是無法使用 IP 地址或 TCP 端口重新映射的環境。
-    - 如果要使 Docker 與 Redis Cluster 兼容，需要使用 Docker 主機網絡模式。可以參考[這裡](https://docs.docker.com/network/)。TODO 這我還沒研究。
+    - 如果要使 Docker 與 Redis Cluster 兼容，需要使用 Docker 主機網絡模式。可以參考[這裡](https://docs.docker.com/network/)。
     - `context: redis`:
         - 指定 Dockerfile 的路徑，這樣 Docker 就會到 redis 資料夾中找 Dockerfile。Dockerfile 的內容後續再提。
     - `entrypoint: [redis-server, /etc/redis/rediscluster.conf, --port,"7001", --cluster-announce-ip,"${ip}"]`:
-        - 指定容器啟動時執行的命令，這裡我們使用 `redis-server` 啟動 Redis，並且指定配置文件為 `/etc/redis/rediscluster.conf`，並且指定端口為 7001，並且指定集群通知的 IP 為 `${ip}`。前述的 `${ip}` 是我們在 `.env` 檔案中設定的 IP。
+        - 指定容器啟動時執行的命令，這裡我們使用 `redis-server` 啟動 Redis，
+        - 指定配置文件為 `/etc/redis/rediscluster.conf`，並且指定端口為 7001，
+        - 並且指定集群通知的 IP 為 `${ip}`。前述的 `${ip}` 是我們在 `.env` 檔案中設定的 IP。因為前面提到的 Redis Cluster 並不支援 NAT，所以我們需要指定 IP。而這裡的 IP 是使用我正在使用的 WIFI IPv4 位址。相關內容我其實也沒有完全搞懂，可以參考[官方文件](IPv4 位址)。
+    - `entrypoint: [/bin/sh,-c,'echo "yes" | redis-cli -a pass.123 --cluster create ${ip}:7001 ${ip}:7002 ${ip}:7003 ${ip}:7004 ${ip}:7005 ${ip}:7006 --cluster-replicas 1']`
+        - 指定容器啟動時執行的命令，這裡我們使用 `/bin/sh` 啟動 shell，
+        - `-c` 參數表示後面的內容是一個命令，
+        - `redis-cli` 創建 Redis Cluster
+        - `${ip}:7001 ${ip}:7002 ${ip}:7003 ${ip}:7004 ${ip}:7005 ${ip}:7006` 是我們的 Redis Cluster 的節點，
+        - `--cluster-replicas 1` 表示每個主節點有一個從節點。
+    - `depends_on`:
+        - 指定容器啟動時依賴的容器，意思是當我們的 `redis-cluster-creator` 容器啟動時，會等到 `redis-node1`、`redis-node2`、`redis-node3`、`redis-node4`、`redis-node5`、`redis-node6` 容器啟動後才會啟動。
 ```yml
 version: '3.4'
 
@@ -1051,9 +1061,7 @@ services:
       - "17001:17001"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf, --port,"7001", --cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node1:/data
       - ./logs/node1:/root/redis/log
   redis-node2:
     build:
@@ -1063,9 +1071,7 @@ services:
       - "17002:17002"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7002",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node2:/data
       - ./logs/node2:/root/redis/log
   redis-node3:
     build:
@@ -1075,9 +1081,7 @@ services:
       - "17003:17003"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7003",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node3:/data
       - ./logs/node3:/root/redis/log
   redis-node4:
     build:
@@ -1087,9 +1091,7 @@ services:
       - "17004:17004"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7004",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node4:/data
       - ./logs/node4:/root/redis/log
   redis-node5:
     build:
@@ -1099,9 +1101,7 @@ services:
       - "17005:17005"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7005",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node5:/data
       - ./logs/node5:/root/redis/log
   redis-node6:
     build:
@@ -1111,9 +1111,7 @@ services:
       - "17006:17006"
     restart: always
     entrypoint: [redis-server, /etc/redis/rediscluster.conf,--port,"7006",--cluster-announce-ip,"${ip}"]
-    #network_mode: host
     volumes:
-      #      - ./data/node6:/data
       - ./logs/node6:/root/redis/log
 
   redis-cluster-creator:
@@ -1128,41 +1126,75 @@ services:
       - redis-node6
 ```
 - Dockerfile
+    - 使用 `redis:6.0.3` 作為基礎 image。
+    - 將 `rediscluster.conf` 複製到 `/etc/redis/rediscluster.conf`。
+    - 使用 `redis-server /etc/redis/rediscluster.conf` 啟動 Redis Cluster。
 ```Dockerfile
 FROM redis:6.0.3
 COPY rediscluster.conf /etc/redis/rediscluster.conf
 ENTRYPOINT redis-server /etc/redis/rediscluster.conf
 ```
 - rediscluster.conf
+    - `bind`:
+        - 指定 Redis Cluster 的 IP。`0.0.0.0`表示所有的 IP 都可以訪問我們的 Redis Cluster。
+    - `cluster-enabled yes`:
+        - 啟用 Redis Cluster。
+    - `cluster-config-file nodes.conf`:
+        - 指定 cluster config 檔案。
+    - `cluster-node-timeout 5000`:
+        - 設置了節點失效的超時時間，單位是毫秒。如果一個節點在 5000 毫秒（5 秒）內沒有響應，其他節點將認為它已經失效。這個設置對於集群中的故障檢測和故障轉移非常重要。
+    - `masterauth pass.123`:
+        - 這個指令是用來設定從結點連接到主節點時需要提供的密碼。
+    - `requirepass pass.123`:
+        - 設置客戶端連接到 Redis 伺服器時需要提供的密碼。
+    - `logfile "/root/redis/log/redis.log"`:
+        - 指定了 Redis 的 log 檔案。
 ```conf
-# ip
 bind 0.0.0.0
-# 啟用 cluster
 cluster-enabled yes
-# 指定 cluster config 檔案
 cluster-config-file nodes.conf
-# 指定 node 無法連線時間
 cluster-node-timeout 5000
-#設置主服務的連接密碼
 masterauth pass.123
-#設置從服務的連接密碼
 requirepass pass.123
 logfile "/root/redis/log/redis.log"
 ```
-
+- 此時的資料夾結構如下:
+```
+.
+├── .env
+├── docker-compose.yml
+└── redis
+    ├── Dockerfile
+    ├── rediscluster.conf
+    └── redis-data
+```
 - 使用 docker-compose 啟動 Redis Cluster
 ```bash
 docker-compose up
 ```
+- 當你在 console 中看到以下訊息時，表示 Redis Cluster 啟動成功。
+```bash
+spring-boot-redis-cluster-practice-redis-cluster-creator-1  | [OK] All nodes agree about slots configuration.
+spring-boot-redis-cluster-practice-redis-cluster-creator-1  | >>> Check for open slots...
+spring-boot-redis-cluster-practice-redis-cluster-creator-1  | >>> Check slots coverage...
+spring-boot-redis-cluster-practice-redis-cluster-creator-1  | [OK] All 16384 slots covered.
+spring-boot-redis-cluster-practice-redis-cluster-creator-1 exited with code 0
+```
 
 ## Spring boot 整合 Redis Cluster
 
-- 到 Spring initializr 上建立一個新的專案，並且加入以下的 dependencies。
+1. 先到 [Spring Initializr](https://start.spring.io/) 創建一個新的 Spring Boot 專案，
+    - Project: Maven Project
+    - Language: Java
+    - Spring Boot: 3.3.0
+    - Packaging: Jar
+    - Java: 17
+2. 加入以下的 dependencies。
     - lombok
     - devtools
     - spring-boot-starter-data-redis
     - spring-boot-starter-web
-- 另外自己加入方便測試的 swagger
+3.  另外自己加入方便測試的 swagger
 ```xml
 <dependency>
     <groupId>org.springdoc</groupId>
@@ -1170,7 +1202,7 @@ docker-compose up
     <version>2.0.2</version>
 </dependency>
 ```
-- spring boot 的 application.yml
+3. spring boot 的 application.yml。 IP 就使用跟前述的 `.env` 檔案中一樣的 IP。
 ```yml
 spring:
   application:
@@ -1179,15 +1211,15 @@ spring:
     redis:
       cluster:
         nodes:
-          - 10.1.201.98:7000
-          - 10.1.201.98:7001
-          - 10.1.201.98:7002
-          - 10.1.201.98:7003
-          - 10.1.201.98:7004
-          - 10.1.201.98:7005
+          - <IP>:7000
+          - <IP>:7001
+          - <IP>:7002
+          - <IP>:7003
+          - <IP>:7004
+          - <IP>:7005
       password: pass.123
 ```
-- SwaggerConfig.java
+4. SwaggerConfig.java
 ```java
 @OpenAPIDefinition(
         info = @Info(
@@ -1199,7 +1231,7 @@ spring:
 public class SwaggerConfig {
 }
 ```
-- MyController.java
+5. MyController.java
 ```java
 @RestController
 public class MyController {
@@ -1233,7 +1265,7 @@ public class MyController {
     
 }
 ```
-- MyService.java
+6. MyService.java
 ```java
 @Service
 public class MyService {
@@ -1257,6 +1289,8 @@ public class MyService {
 - 啟動 Spring boot 專案，並且到 Swagger 介面中測試我們的 API。
 
 ## Redis Cluster 的基本操作
+
+
 
 ## Redis 的分布式鎖
 
