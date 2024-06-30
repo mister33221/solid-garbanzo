@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 
@@ -23,7 +22,7 @@ public class WriteToMasterReadFromReplicaConfiguration {
     public LettuceConnectionFactory redisConnectionFactory() {
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .readFrom(REPLICA_PREFERRED)
+                .readFrom(REPLICA_PREFERRED) // 設定讀寫分離
                 .build();
 
         RedisClusterConfiguration serverConfig = new RedisClusterConfiguration();
