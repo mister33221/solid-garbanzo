@@ -2,11 +2,15 @@ package com.kai.spring_boot_redis_cluster_practice.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.data.redis.connection.RedisClusterConnection;
+import org.springframework.data.redis.connection.RedisClusterNode;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -43,91 +47,40 @@ public class TestService {
 
     }
 
-//    public String testAvailability() {
-//
-//
-//        String key = "testKey";
-//        String value = "testValue";
-//
-//        redisTemplate.opsForValue().set(key, value);
-//
-////      在這裡手動關閉一個主節點
-////      指令是 docker stop redis-cluster-practice_redis-cluster-node-0_1
-//
-//        String retrievedValue = redisTemplate.opsForValue().get(key);
-//
-//        return "Original value: " + value + ", Retrieved value: " + retrievedValue;
-//
-//
-//    }
-//
-//    public String testAutomaticFailover() throws InterruptedException {
-//        String key1 = "failoverKey1";
-//        String value1 = "failoverValue1";
-//
-//        redisTemplate.opsForValue().set(key1, value1);
-//
-//        // 在這裡手動關閉一個主節點
-//
-//        Thread.sleep(10000); // 等待10秒，讓故障轉移發生
-//
-//        String key2 = "failoverKey2";
-//        String value2 = "failoverValue2";
-//        redisTemplate.opsForValue().set(key2, value2);
-//
-//        String retrievedValue1 = redisTemplate.opsForValue().get(key1);
-//        String retrievedValue2 = redisTemplate.opsForValue().get(key2);
-//
-//        return "Key1: " + retrievedValue1 + ", Key2: " + retrievedValue2;
-//    }
-//
-//    public Map<String, String> testConsistentHashing() {
-//        String[] keys = {"key1", "key2", "key3", "key4", "key5"};
-//
-//        for (String key : keys) {
-//            redisTemplate.opsForValue().set(key, "value");
-//        }
-//
-//        Map<String, String> keyLocations = new HashMap<>();
-//        for (String key : keys) {
-////            TODO
-////            RedisClusterNode node = redisTemplate.getConnectionFactory().getClusterConnection().keyCommands().nodeForKey(key.getBytes());
-////            keyLocations.put(key, node.toString());
-//        }
-//
-//        return keyLocations;
-//    }
-//
-//    public Map<String, List<String>> testReadWriteSplitting(String key, String value, int readCount) {
-//        Map<String, List<String>> result = new HashMap<>();
-//
-//        // Write operation
-//        redisTemplate.opsForValue().set(key, value);
-//        result.put("write", List.of(getNodeInfo()));
-//
-//        // Read operations
-//        List<String> readNodes = new ArrayList<>();
-//        for (int i = 0; i < readCount; i++) {
-//            redisTemplate.opsForValue().get(key);
-//            readNodes.add(getNodeInfo());
-//        }
-//        result.put("read", readNodes);
-//
-//        return result;
-//    }
-//
-//    private String getNodeInfo() {
-//        RedisConnectionFactory connectionFactory = redisTemplate.getConnectionFactory();
-//        StatefulRedisClusterConnection<String, String> clusterConnection =
-//                (StatefulRedisClusterConnection<String, String>) connectionFactory.getClusterConnection().getNativeConnection();
-//        RedisClusterClient clusterClient = clusterConnection.
-//        Partitions partitions = clusterClient.getPartitions();
-//        String currentNode = partitions.getPartition(getSlot("test".getBytes())).getNodeId();
-//        return currentNode;
-//    }
-//
-//    private int getSlot(byte[] key) {
-//        RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
-//        return clusterConnection.clusterGetSlotForKey(key);
-//    }
+    public String testAvailability() {
+
+//    1. 先寫入一筆數據
+        String key = "availabilityKey";
+        String value = "availabilityValue";
+        redisTemplate.opsForValue().set(key, value);
+
+        logger.info("Written key: {}, value: {}", key, value);
+
+//    2. 確認他在哪個節點
+        RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
+        int slot = clusterConnection.clusterGetSlotForKey(key.getBytes());
+        String nodePort = String.valueOf(clusterConnection.clusterGetNodeForSlot(slot).getPort());
+
+        logger.info("The key is stored in the node with port: {}", nodePort);
+
+        return "The key is stored in the node with port: " + nodePort + ", Please manually shut down the node by using docker stop command. Then reboot the app and use the testAvailability2 API.";
+    }
+
+    public String testAvailability2() {
+        String key = "availabilityKey";
+
+        String retrievedValue = redisTemplate.opsForValue().get(key);
+
+        RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
+        int slot = clusterConnection.clusterGetSlotForKey(key.getBytes());
+        RedisClusterNode node = clusterConnection.clusterGetNodeForSlot(slot);
+        int nodePort = node.getPort();
+
+        logger.info("The key is stored in the node with port: {}, value: {}", nodePort, retrievedValue);
+
+        return "The key is stored in the node with port: " + nodePort + ", value: " + retrievedValue;
+
+    }
+
+
 }
