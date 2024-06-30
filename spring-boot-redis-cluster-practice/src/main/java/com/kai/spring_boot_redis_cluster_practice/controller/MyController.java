@@ -1,16 +1,12 @@
 package com.kai.spring_boot_redis_cluster_practice.controller;
 
 import com.kai.spring_boot_redis_cluster_practice.service.MyService;
-import com.kai.spring_boot_redis_cluster_practice.service.TestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController

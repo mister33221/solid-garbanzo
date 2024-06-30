@@ -88,6 +88,23 @@ services:
 
 我們就不廢話，直接來囉!
 
+- 我們的資料夾結構會如下：
+```
+src
+├── main
+│   ├── java
+│   │   ├── com
+│   │   │   ├── kai
+│   │   │   │   ├── spring_boot_redis_practice
+│   │   │   │   │   ├── config
+│   │   │   │   │   │   └── SwaggerConfig.java
+│   │   │   │   │   ├── MyController.java
+│   │   │   │   │   └── MyService.java
+│   │   │   │   └── SpringBootRedisPracticeApplication.java
+│   │   └── resources
+│   │       ├── application.properties
+下略
+```
 1. 先到 [Spring Initializr](https://start.spring.io/) 創建一個新的 Spring Boot 專案，
     - Project: Maven Project
     - Language: Java
@@ -146,25 +163,8 @@ public class SwaggerConfig {
 spring.redis.host=localhost
 spring.redis.port=6379
 ```
-8. 目前我們的資料夾結構應該是這樣的：
-```
-src
-├── main
-│   ├── java
-│   │   ├── com
-│   │   │   ├── kai
-│   │   │   │   ├── spring_boot_redis_practice
-│   │   │   │   │   ├── config
-│   │   │   │   │   │   └── SwaggerConfig.java
-│   │   │   │   │   ├── MyController.java
-│   │   │   │   │   └── MyService.java
-│   │   │   │   └── SpringBootRedisPracticeApplication.java
-│   │   └── resources
-│   │       ├── application.properties
-下略
-```
-9. 到瀏覽器輸入 `localhost:5540` 進入前面開好的 RedisInsight，方便我們觀察 Redis 的資料。
-10. 再到瀏覽器輸入 `localhost:8080/swagger-ui.html` 進入 Swagger 的介面，方便我們測試 API。
+8. 到瀏覽器輸入 `localhost:5540` 進入前面開好的 RedisInsight，方便我們觀察 Redis 的資料。
+9. 再到瀏覽器輸入 `localhost:8080/swagger-ui.html` 進入 Swagger 的介面，方便我們測試 API。
 
 這樣所有基礎需求都寫完了，接下來我們就來實作一些 Redis 的基本操作吧~
 
@@ -991,6 +991,8 @@ graph TD
         - 節點1: 0-5500
         - 節點2: 5501-11000
         - 節點3: 11001-16383
+    - 我們後面整合 spring data redis 時，啟動專案就會出現像下面這樣，顯示所有的 slots 都被 cover分配好了的 log 訊息。
+![alt text](image-2.png)
     - 當一個 key-value 被存入 Redis Cluster 時，Redis Cluster 會根據 key 計算出它屬於哪個 hash slot，然後將這個 key-value 存入負責這個 hash slot 的節點中。
     - 當我們要取得一個 key-value 時，Redis Cluster 會根據 key 計算出它屬於哪個 hash slot，然後去負責這個 hash slot 的節點中取得這個 key-value。
     - 自動重新分片:
@@ -1183,6 +1185,35 @@ spring-boot-redis-cluster-practice-redis-cluster-creator-1 exited with code 0
 
 ## Spring boot 整合 Redis Cluster
 
+- 我們的資料夾結構會如下
+```
+.
+├── redis
+│   ├── Dockerfile
+│   └── rediscluster.conf
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       └── kai.spring_boot_redis_cluster_practice
+│   │   │           ├── config
+│   │   │           │   └── WriteToMasterReadFromReplicaConfig.java
+|   |   |           │   └── SwaggerConfig.java
+│   │   │           ├── controller
+│   │   │           │   ├── MyController.java
+│   │   │           │   └── TestController.java
+│   │   │           ├── service
+│   │   │           │   ├── MyService.java
+│   │   │           │   └── TestService.java
+│   │   │           └── SpringBootRedisClusterPracticeApplication.java
+│   │   └── resources
+│   │       ├── application.yml
+│   │       ├── redis-cluster-connection-info.properties
+│   │       └── static
+│   └── test
+├── .env
+├── docker-compose.yml   
+```
 1. 先到 [Spring Initializr](https://start.spring.io/) 創建一個新的 Spring Boot 專案，
     - Project: Maven Project
     - Language: Java
@@ -1207,23 +1238,30 @@ spring-boot-redis-cluster-practice-redis-cluster-creator-1 exited with code 0
 spring:
   application:
     name: spring-boot-redis-cluster-practice
+  config:
+    import: classpath:ip.properties
   data:
     redis:
       cluster:
         nodes:
-          - <IP>:7000
-          - <IP>:7001
-          - <IP>:7002
-          - <IP>:7003
-          - <IP>:7004
-          - <IP>:7005
-      password: pass.123
+          - ${ip}:7000
+          - ${ip}:7001
+          - ${ip}:7002
+          - ${ip}:7003
+          - ${ip}:7004
+          - ${ip}:7005
+      password: ${redis.password}
 ```
-4. SwaggerConfig.java
+4. 另外開一個 `redis-cluster-connection-info.properties` 檔案，並且加入以下設定。
+```properties
+ip=192.168.60.62
+redis.password=pass.123
+```
+5. SwaggerConfig.java
 ```java
 @OpenAPIDefinition(
         info = @Info(
-                title = "Spring Boot integration with single node Redis practice",
+                title = "Spring Boot integration with Redis Cluster practice",
                 version = "0.0"
         )
 )
@@ -1231,7 +1269,7 @@ spring:
 public class SwaggerConfig {
 }
 ```
-5. MyController.java
+6. MyController.java
 ```java
 @RestController
 public class MyController {
@@ -1242,34 +1280,65 @@ public class MyController {
         this.service = service;
     }
 
-    @Operation(summary = "Hello World", description = "Returns a simple Hello World message")
+    @Operation(
+            summary = "Hello World",
+            description = "Returns a simple Hello World message"
+    )
     @Tag(name = "Hello World")
     @GetMapping("/")
     public String helloWorld() {
         return "Hello World!";
     }
 
-    @Operation(summary = "Save", description = "Save a key-value pair")
-    @Tag(name = "Key-Value")
+    @Operation(
+            summary = "Save a Base-operation pair",
+            description = "Save a Base-operation pair"
+    )
+    @Tag(name = "Base-operation")
     @GetMapping("/save")
     public void save(@Parameter(description = "The key") String key, @Parameter(description = "The value") String value) {
         service.save(key, value);
     }
 
-    @Operation(summary = "Get", description = "Gets a value by key")
-    @Tag(name = "Key-Value")
+    @Operation(
+            summary = "Get a value by key",
+            description = "Gets a value by key"
+    )
+    @Tag(name = "Base-operation")
     @GetMapping("/get")
     public String get(@Parameter(description = "The key") String key) {
         return service.get(key);
     }
-    
+
+    @Tag(name = "Base-operation")
+    @Operation(
+            summary = "Get all the keys and values in Redis Cluster",
+            description = "Gets all the keys and values in Redis Cluster"
+    )
+    @GetMapping("/getAll")
+    public List<String> getAll() {
+        return service.getAll();
+    }
+
+    @Tag(name = "Base-operation")
+    @Operation(
+            summary = "Flush all the data in Redis Cluster",
+            description = "Deletes all the data in Redis Cluster"
+    )
+    @Tag(name = "Base-operation")
+    @GetMapping("/flush")
+    public String flush() {
+        return service.flush();
+    }
 }
+
 ```
-6. MyService.java
+7. MyService.java
 ```java
 @Service
 public class MyService {
 
+    private static final Logger log = LoggerFactory.getLogger(MyService.class);
     private final StringRedisTemplate stringRedisTemplate;
 
     public MyService(StringRedisTemplate stringRedisTemplate) {
@@ -1278,21 +1347,225 @@ public class MyService {
 
 
     public void save(String key, String value) {
+
         stringRedisTemplate.opsForValue().set(key, value);
+
+        log.info("Saved Key: {}, Value: {}", key, value);
     }
 
     public String get(String key) {
-        return stringRedisTemplate.opsForValue().get(key);
+        String value = stringRedisTemplate.opsForValue().get(key);
+
+        log.info("Key: {}, Value: {}", key, value);
+
+        return value;
+    }
+
+    public String flush() {
+        stringRedisTemplate.getConnectionFactory().getConnection().flushAll();
+        log.info("Flushed all keys");
+        return "Flushed all keys";
+    }
+
+    public List<String> getAll() {
+        List<String> result = new ArrayList<>();
+        stringRedisTemplate.keys("*").forEach(key -> {
+            String keyWithValues = key + ": " + stringRedisTemplate.opsForValue().get(key);
+            result.add(keyWithValues);
+        });
+
+        log.info("All keys and values: {}", result);
+
+        return result;
     }
 }
 ```
-- 啟動 Spring boot 專案，並且到 Swagger 介面中測試我們的 API。
+8. Redis Cluster 其實在一般的 Redis 操作上沒有太大的差異，但提供了 數據分片(Data sharding)、自動故障轉移(Automatic Failover)、高可用性(Availability)、Load Balancing 等功能。這裡我們就寫一些用來測試數據分片、自動故障轉移、高可用性的 API。程式碼我認為寫得很清楚了，所以我就不過多解釋，有興趣的到最後面把我的程式碼下載下來看看吧。
+9. 新加 redis 的 WriteToMasterReadFromReplicaConfig 來設定 redis cluster 的讀寫分離
+```java
+@Configuration
+public class WriteToMasterReadFromReplicaConfig {
 
-## Redis Cluster 的基本操作
+    @Value("${ip}")
+    private String ip;
 
+    @Value("${redis.password}")
+    private String redisPassword;
 
+    @Bean
+    public LettuceConnectionFactory redisConnectionFactory() {
 
-## Redis 的分布式鎖
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                .readFrom(REPLICA_PREFERRED) // 設定讀寫分離
+                .build();
+
+        RedisClusterConfiguration serverConfig = new RedisClusterConfiguration();
+        serverConfig.clusterNode(ip, 7001);
+        serverConfig.clusterNode(ip, 7002);
+        serverConfig.clusterNode(ip, 7003);
+        serverConfig.clusterNode(ip, 7004);
+        serverConfig.clusterNode(ip, 7005);
+        serverConfig.clusterNode(ip, 7006);
+        serverConfig.setPassword(redisPassword);
+
+        return new LettuceConnectionFactory(serverConfig, clientConfig);
+    }
+
+}
+```
+10. TestController.java
+```java
+@RestController
+public class TestController {
+
+    private final TestService testService;
+
+    public TestController(TestService testService) {
+        this.testService = testService;
+    }
+
+    @Operation(
+            summary = "Test sharding",
+            description = """
+            數據分片 (Data Sharding)
+            
+            Redis Cluster 使用 16384 個哈希槽來分配數據。我們可以測試數據是否確實分佈在不同的節點上。
+            
+            測試案例：
+            
+            寫入大量數據
+            檢查每個節點的數據分佈
+            """)
+    @GetMapping("/test-sharding")
+    public Map<String, Long> testSharding(@Parameter(description = "The number of keys to write") @RequestParam(defaultValue = "1000") int keyCount) {
+        return testService.testSharding(keyCount);
+    }
+//
+    @Operation(
+            summary = "Test availability、Automatic Failover Step 1",
+            description = """
+            高可用性 (High Availability)，自動故障轉移 (Automatic Failover)
+
+            Redis Cluster 通過主從複制確保高可用性。我們可以測試當一個主節點故障時，系統是否仍然可用。
+
+            測試案例：
+
+            寫入數據
+            手動關閉一個主節點
+            嘗試讀取數據
+            """)
+    @GetMapping("/test-availability")
+    public String test() {
+        return testService.testAvailability();
+    }
+
+    @Operation(
+            summary = "Test availability、Automatic Failover Step 2",
+            description = """
+            手動關閉某一個主節點後，重啟一下spring boot，再次嘗試讀取數據，會發現數據依然可以讀取，且由另外一個主節點提供服務。
+            至於為什麼要重啟 spring boot 才能看到效果，我不是很確定。
+            可能是因為一開始連線的時候，確定好有哪些可用節點後，分配好了槽，所以即使後來有節點掛掉，他還是依照一開始的分配好的節點來回覆，
+            而重啟 spring boot 可能是重新連線，重新分配槽，所以才能看到效果。但實際上就算你不重啟還是可以取得資料，只是他仍然顯示資料是從舊的節點取回。
+            測試完畢後，如果你想要重新啟動節點，請把剛剛關掉的節點啟動，然後再重新跑一次 redis-cluster-creator container。
+            """)
+    @GetMapping("/test-availability-2")
+    public String testAvailability2() {
+        return testService.testAvailability2();
+    }
+
+    @Operation(
+            summary = "Test read/write splitting",
+            description = """
+            讀寫分離 (Read/Write Splitting)
+
+            Redis Cluster 支持從主節點寫入數據，從從節點讀取數據，這可以提高讀取性能。
+
+            測試案例：
+            一次寫操作和多次讀操作，並記錄每次操作使用的節點。
+            獲取當前操作使用的 Redis 節點的信息，包括節點 ID 和角色（主節點或副本節點）。
+            """)
+    @GetMapping("/test-read-write-splitting")
+    public Map<String, String> testReadWriteSplitting(@RequestParam String key, @RequestParam String value, @RequestParam(defaultValue = "10") int readCount) {
+//        TODO
+        return null;
+    }
+}
+```
+11. TestService.java
+```java
+@Service
+public class TestService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestService.class);
+    private final StringRedisTemplate redisTemplate;
+
+    public TestService(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+    public Map<String, Long> testSharding(Integer keyCount) {
+
+        for (int i = 0; i < keyCount; i++) {
+            redisTemplate.opsForValue().set("key" + i, "value" + i);
+        }
+
+        Map<String, Long> nodePortAndKeyCounts = new HashMap<>();
+        for (int i = 0; i < 1000; i++) {
+            String key = "key" + i;
+            RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
+            int slot = clusterConnection.clusterGetSlotForKey(key.getBytes()); // Redis cluster 會根據 key 的哈希值來分配槽
+            String nodePort = String.valueOf(clusterConnection.clusterGetNodeForSlot(slot).getPort()); // 根據槽來獲取節點
+            nodePortAndKeyCounts.put(nodePort, nodePortAndKeyCounts.getOrDefault(nodePort, 0L) + 1);
+        }
+
+        logger.info("""
+                Node ports and their key counts:
+                {}
+                """, nodePortAndKeyCounts);
+
+        return nodePortAndKeyCounts;
+
+    }
+
+    public String testAvailability() {
+
+//    1. 先寫入一筆數據
+        String key = "availabilityKey";
+        String value = "availabilityValue";
+        redisTemplate.opsForValue().set(key, value);
+
+        logger.info("Written key: {}, value: {}", key, value);
+
+//    2. 確認他在哪個節點
+        RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
+        int slot = clusterConnection.clusterGetSlotForKey(key.getBytes());
+        String nodePort = String.valueOf(clusterConnection.clusterGetNodeForSlot(slot).getPort());
+
+        logger.info("The key is stored in the node with port: {}", nodePort);
+
+        return "The key is stored in the node with port: " + nodePort + ", Please manually shut down the node by using docker stop command. Then reboot the app and use the testAvailability2 API.";
+    }
+
+    public String testAvailability2() {
+        String key = "availabilityKey";
+
+        String retrievedValue = redisTemplate.opsForValue().get(key);
+
+        RedisClusterConnection clusterConnection = redisTemplate.getConnectionFactory().getClusterConnection();
+        int slot = clusterConnection.clusterGetSlotForKey(key.getBytes());
+        RedisClusterNode node = clusterConnection.clusterGetNodeForSlot(slot);
+        int nodePort = node.getPort();
+
+        logger.info("The key is stored in the node with port: {}, value: {}", nodePort, retrievedValue);
+
+        return "The key is stored in the node with port: " + nodePort + ", value: " + retrievedValue;
+
+    }
+}
+```
+- 啟動 Spring boot 專案，並且到 Swagger 介面中測試我們的 API 吧~
+
+## Redis 的分布式鎖 TODO
 
 ## 新的 Redis stack 搭配 Redis OM
 

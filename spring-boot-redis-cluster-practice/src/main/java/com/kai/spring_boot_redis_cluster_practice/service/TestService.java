@@ -2,15 +2,12 @@ package com.kai.spring_boot_redis_cluster_practice.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisClusterNode;
-import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -81,6 +78,4 @@ public class TestService {
         return "The key is stored in the node with port: " + nodePort + ", value: " + retrievedValue;
 
     }
-
-
 }

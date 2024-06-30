@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 @OpenAPIDefinition(
         info = @Info(
-                title = "Spring Boot integration with single node Redis practice",
+                title = "Spring Boot integration with Redis Cluster practice",
                 version = "0.0"
         )
 )

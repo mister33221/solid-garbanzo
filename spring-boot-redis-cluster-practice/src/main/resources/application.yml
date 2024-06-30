@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-boot-redis-cluster-practice
   config:
-    import: classpath:ip.properties
+    import: classpath:redis-cluster-connection-info.properties
   data:
     redis:
       cluster:

@@ -10,7 +10,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import static io.lettuce.core.ReadFrom.REPLICA_PREFERRED;
 
 @Configuration
-public class WriteToMasterReadFromReplicaConfiguration {
+public class WriteToMasterReadFromReplicaConfig {
 
     @Value("${ip}")
     private String ip;
