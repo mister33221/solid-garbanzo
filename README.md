@@ -1573,6 +1573,14 @@ Redis OM 目前還是 Beta 版，所以不建議使用在專案上。不過它�
 
 有興趣的話，可以考我的另一篇文章[Skeleton of Spring Boot + Redis OM + Redis Stack](https://hackmd.io/-7OwL1VlRVKRRc1GU1xn1g)
 
+## 總結
+
+寫這麼多...好累喔。但寫完還是覺得水很深，以上介紹的還是比較偏應用，如果要深入研究 Redis 的話，還是要看看 Redis 的[官方文件](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)。不過我覺得這樣夠用了...吧。
+
+我把我的程式碼放在[這裡](https://github.com/mister33221/spring-boot-redis-practice.git)囉!
+
+如果有誤的地方，歡迎指正，謝謝!
+
 ## Reference
 - [https://redis.dev.org.tw/docs](https://redis.dev.org.tw/docs)
 - [https://redis.io/docs](https://redis.io/docs)
